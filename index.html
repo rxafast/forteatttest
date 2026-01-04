@@ -944,10 +944,16 @@
                  
                  const filterDiv = document.getElementById('att-subjects-filter');
                  filterDiv.innerHTML = '';
+                 
+                 if (subs.length === 0) {
+                     filterDiv.innerHTML = `<span class="text-xs text-red-500 font-bold bg-red-50 p-2 rounded">No subjects found. Please add subjects in Admin > Subjects.</span>`;
+                 }
+
                  subs.forEach(s => {
                      if(window.state.activeSubjects[s] === undefined) window.state.activeSubjects[s] = true;
                      const active = window.state.activeSubjects[s];
-                     const cls = active ? "bg-primary-600 text-white shadow-md shadow-primary-500/20" : "bg-white dark:bg-dark-border text-slate-400 border border-slate-200 dark:border-dark-border opacity-50";
+                     // Updated colors for better visibility
+                     const cls = active ? "bg-primary-600 text-white shadow-md shadow-primary-500/20" : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300 border border-transparent";
                      filterDiv.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-lg text-xs font-bold transition-all ${cls}">${s}</button>`;
                  });
 
@@ -969,6 +975,12 @@
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec])).filter(s => window.state.activeSubjects[s]);
+
+                if (subs.length === 0) {
+                    thead.innerHTML = `<tr><th class="p-4 text-center text-slate-400">No Subjects Configured</th></tr>`;
+                    tbody.innerHTML = `<tr><td class="p-8 text-center text-slate-500">Please go to Admin Dashboard to add subjects.</td></tr>`;
+                    return;
+                }
 
                 // Header
                 let h = `<tr><th class="px-4 py-3 sticky-col-1 bg-slate-50 dark:bg-dark-card border-b border-r dark:border-dark-border">Roll</th>
@@ -1346,39 +1358,55 @@
             if(user) {
                 // Load School Config First
                 onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), snap => {
+                    let data = {};
                     if(snap.exists()) {
-                         window.state.school = snap.data();
-                         // Auto-route based on stored intent or email match
-                         const role = localStorage.getItem('role_attempt');
-                         if(role === 'admin') admin.init();
-                         else if(localStorage.getItem('current_class')) {
-                             window.state.currentClass = localStorage.getItem('current_class');
-                             teacher.init();
-                         } else {
-                             // Match teacher email
-                             const t = window.state.school.teachers.find(x => x.email.toLowerCase() === user.email.toLowerCase());
-                             if(t) {
-                                 // Show class selection in login
-                                 const s = document.getElementById('inp-teacher-class');
-                                 s.innerHTML = '';
-                                 (t.assignedClasses||[]).forEach(c => s.innerHTML+=`<option>${c}</option>`);
-                                 document.getElementById('teacher-class-select-wrapper').classList.remove('hidden');
-                                 document.getElementById('btn-teacher-login').classList.add('hidden');
-                                 document.getElementById('inp-teacher-email').value = user.email;
-                                 document.getElementById('inp-teacher-pass').value = '********';
-                                 document.getElementById('inp-teacher-email').disabled = true;
-                                 document.getElementById('inp-teacher-pass').disabled = true;
-                                 
-                                 // Ensure login screen is visible
-                                 document.getElementById('view-login').classList.remove('hidden', 'opacity-0');
-                             } else {
-                                 // Maybe admin login?
-                                 if(role === 'admin') admin.init();
-                             }
+                         data = snap.data();
+                         // --- SEEDING LOGIC: If subjects empty, add default subjects ---
+                         if(!data.subjects || data.subjects.length === 0) {
+                             data.subjects = ['MATH', 'ENG', 'PHY', 'CHEM', 'BIO', 'HIST'];
+                             // Ensure we update DB so it persists
+                             setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), data, {merge:true});
                          }
                     } else {
                         // First run init
-                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school);
+                        data = {
+                            classes: ['Class 10-A', 'Class 10-B'],
+                            teachers: [],
+                            subjects: ['MATH', 'ENG', 'PHY', 'CHEM', 'BIO', 'HIST'],
+                            class_subjects: {}
+                        };
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), data);
+                    }
+                    
+                    window.state.school = data;
+
+                    // Auto-route based on stored intent or email match
+                    const role = localStorage.getItem('role_attempt');
+                    if(role === 'admin') admin.init();
+                    else if(localStorage.getItem('current_class')) {
+                        window.state.currentClass = localStorage.getItem('current_class');
+                        teacher.init();
+                    } else {
+                        // Match teacher email
+                        const t = window.state.school.teachers.find(x => x.email.toLowerCase() === user.email.toLowerCase());
+                        if(t) {
+                            // Show class selection in login
+                            const s = document.getElementById('inp-teacher-class');
+                            s.innerHTML = '';
+                            (t.assignedClasses||[]).forEach(c => s.innerHTML+=`<option>${c}</option>`);
+                            document.getElementById('teacher-class-select-wrapper').classList.remove('hidden');
+                            document.getElementById('btn-teacher-login').classList.add('hidden');
+                            document.getElementById('inp-teacher-email').value = user.email;
+                            document.getElementById('inp-teacher-pass').value = '********';
+                            document.getElementById('inp-teacher-email').disabled = true;
+                            document.getElementById('inp-teacher-pass').disabled = true;
+                            
+                            // Ensure login screen is visible
+                            document.getElementById('view-login').classList.remove('hidden', 'opacity-0');
+                        } else {
+                            // Maybe admin login?
+                            if(role === 'admin') admin.init();
+                        }
                     }
                 });
             } else {
