@@ -329,7 +329,10 @@
                                 <label class="btn-secondary text-xs cursor-pointer"><i class="fas fa-file-csv mr-1"></i> Import CSV <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)"></label>
                              </div>
                          </div>
-                         <div class="flex flex-wrap gap-2 items-center" id="att-subjects-filter"></div>
+                         <div class="flex flex-col gap-1">
+                             <span class="text-[10px] uppercase font-bold text-slate-400">Active Subjects (Click to Toggle for Today):</span>
+                             <div class="flex flex-wrap gap-2 items-center" id="att-subjects-filter"></div>
+                         </div>
                     </div>
 
                     <!-- Attendance Table -->
@@ -343,21 +346,34 @@
                     </div>
                 </div>
 
-                 <!-- TEACHER: REPORTS (Hidden by default) -->
+                 <!-- TEACHER: REPORTS (Enhanced) -->
                 <div id="view-teacher-report" class="view-section hidden h-full flex flex-col">
-                     <div class="flex justify-between items-center mb-6 shrink-0">
-                        <h2 class="text-2xl font-bold dark:text-white">Class Reports</h2>
-                        <div class="flex gap-2">
-                            <input type="month" id="rep-month" class="input-modern py-2 text-sm w-auto">
-                            <button onclick="teacher.loadReport()" class="btn-primary">Generate</button>
-                            <button onclick="teacher.downloadCSV()" class="btn-secondary text-blue-600 border-blue-200 bg-blue-50"><i class="fas fa-download"></i></button>
+                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 shrink-0 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold dark:text-white">Detailed Report</h2>
+                            <p class="text-slate-500 text-sm">Lecture-wise & Overall Performance</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 items-end">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] uppercase font-bold text-slate-400">From</label>
+                                <input type="date" id="rep-start" class="input-modern py-1.5 text-xs w-32">
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] uppercase font-bold text-slate-400">To</label>
+                                <input type="date" id="rep-end" class="input-modern py-1.5 text-xs w-32">
+                            </div>
+                            <button onclick="teacher.loadReport()" class="btn-primary py-1.5 h-[34px] self-end">Generate</button>
+                            <button onclick="teacher.downloadCSV()" class="btn-secondary text-blue-600 border-blue-200 bg-blue-50 py-1.5 h-[34px] self-end" title="Export CSV"><i class="fas fa-download"></i></button>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border overflow-hidden flex-1">
-                         <div class="overflow-auto h-full">
+                    
+                    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border overflow-hidden flex-1 flex flex-col">
+                         <div class="overflow-auto flex-1">
                             <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead id="rep-thead" class="bg-slate-50 dark:bg-dark-border/50 sticky top-0 z-10"></thead>
-                                <tbody id="rep-list" class="divide-y divide-slate-100 dark:divide-dark-border text-slate-700 dark:text-slate-300"></tbody>
+                                <thead id="rep-thead" class="bg-slate-50 dark:bg-dark-border/50 sticky top-0 z-10 text-xs uppercase font-bold text-slate-500 dark:text-slate-400"></thead>
+                                <tbody id="rep-list" class="divide-y divide-slate-100 dark:divide-dark-border text-slate-700 dark:text-slate-300">
+                                    <tr><td colspan="100%" class="p-8 text-center text-slate-400">Select a date range and click Generate.</td></tr>
+                                </tbody>
                             </table>
                          </div>
                     </div>
@@ -375,7 +391,7 @@
 
     <!-- ===================== MODALS ===================== -->
     
-    <!-- Student Profile & Stats Modal (New Feature) -->
+    <!-- Student Profile & Stats Modal -->
     <div id="modal-student-profile" class="fixed inset-0 z-[60] hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="ui.closeProfile()"></div>
         <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-dark-card shadow-2xl transform transition-transform translate-x-full duration-300 flex flex-col" id="profile-slideover">
@@ -502,6 +518,7 @@
             selectedStudentIdx: null,
             editingTeacherIdx: null,
             chartInstances: {},
+            reportData: null, // Store calculate report
             listeners: []
         };
 
@@ -642,12 +659,7 @@
                 document.getElementById('stat-t').innerText = s.teachers.length;
                 document.getElementById('stat-c').innerText = s.classes.length;
                 
-                // Get Total Students count by summing all class student arrays
                 let totalStudents = 0;
-                // We need to fetch all classes to count students accurately if not already loaded, 
-                // but for now we assume we might need to fetch them. 
-                // Optimization: Store student count in school_data or fetch all classes.
-                // Let's just fetch all classes for the counter.
                 const classSnaps = await Promise.all(s.classes.map(c => getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', c))));
                 classSnaps.forEach(snap => { if(snap.exists()) totalStudents += (snap.data().students || []).length; });
                 document.getElementById('stat-stu').innerText = totalStudents;
@@ -656,7 +668,6 @@
                 const today = new Date().toISOString().split('T')[0];
                 let totalP = 0, totalA = 0, totalMarked = 0;
                 
-                // Fetch today's attendance for all classes
                 const attSnaps = await Promise.all(s.classes.map(c => getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${c}_${today}`))));
                 
                 const last7Days = [];
@@ -669,8 +680,6 @@
                     if(snap.exists()) {
                         const recs = snap.data().records;
                         Object.values(recs).forEach(stuRec => {
-                            // Logic: If any subject is marked, count the student.
-                            // We will approximate by taking the first subject status found
                             const statuses = Object.values(stuRec);
                             if(statuses.length > 0) {
                                 totalMarked++;
@@ -700,7 +709,6 @@
                 const gridColor = isDark ? '#27272a' : '#f1f5f9';
 
                 // Trend Chart (Mock data for demo, replaced with real aggregation in prod)
-                // In a real app, we would fetch last 7 days data. Here we generate random realistic data.
                 const mockTrend = labels.map(() => Math.floor(Math.random() * (95 - 75) + 75)); 
 
                 window.state.chartInstances.trends = new Chart(ctx1, {
@@ -734,7 +742,7 @@
                     data: {
                         labels: ['Present', 'Absent'],
                         datasets: [{
-                            data: [p || 1, a || 0], // Fallback to 1,0 to show empty chart
+                            data: [p || 1, a || 0], 
                             backgroundColor: ['#10b981', '#ef4444'],
                             borderWidth: 0
                         }]
@@ -795,7 +803,7 @@
             },
 
             deleteNotice: async (id) => {
-                if(confirm("Delete this notice?")) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notices', 'all', id), {}, {delete:true}); // Delete workaround if using simple deleteDoc needs import
+                if(confirm("Delete this notice?")) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notices', 'all', id), {}, {delete:true}); 
             },
 
             // --- CRUD (Standard) ---
@@ -820,7 +828,7 @@
                         </div>`;
                 });
 
-                // Classes & Subjects (Simplified for brevity, same logic as v1 but styled)
+                // Classes
                 const cList = document.getElementById('list-classes');
                 cList.innerHTML = '';
                 s.classes.forEach((c, i) => {
@@ -837,7 +845,6 @@
                 });
             },
             
-            // ... Add/Delete functions mirror the previous version logic ...
             addTeacher: async () => {
                 const n = document.getElementById('new-t-name').value;
                 const e = document.getElementById('new-t-email').value;
@@ -845,8 +852,6 @@
                 const c = document.getElementById('new-t-class').value;
                 if(!n || !e || !p) return ui.toast("Fill all fields");
                 
-                // Note: creating user requires secondary app instance or cloud function in real prod. 
-                // We'll update the config assuming auth creation handled.
                 window.state.school.teachers.push({name:n, email:e, assignedClasses: c?[c]:[]});
                 await admin.saveConfig();
                 ui.toast("Teacher Added");
@@ -898,6 +903,12 @@
                 // Set today
                 document.getElementById('att-date').value = new Date().toISOString().split('T')[0];
 
+                // Setup Date Range Defaults for Report
+                const today = new Date();
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                document.getElementById('rep-start').value = firstDay.toISOString().split('T')[0];
+                document.getElementById('rep-end').value = today.toISOString().split('T')[0];
+
                 // Load Students
                 onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), snap => {
                     window.state.students = snap.exists() ? (snap.data().students || []) : [];
@@ -914,7 +925,7 @@
             switchView: (v) => {
                 document.getElementById('view-teacher-wrapper').classList.toggle('hidden', v !== 'mark');
                 document.getElementById('view-teacher-report').classList.toggle('hidden', v !== 'report');
-                document.getElementById('view-teacher-notices').classList.add('hidden'); // Close notices
+                document.getElementById('view-teacher-notices').classList.add('hidden');
 
                 // Nav Active State
                 ['mark', 'report'].forEach(id => {
@@ -936,7 +947,7 @@
                  subs.forEach(s => {
                      if(window.state.activeSubjects[s] === undefined) window.state.activeSubjects[s] = true;
                      const active = window.state.activeSubjects[s];
-                     const cls = active ? "bg-primary-600 text-white shadow-md shadow-primary-500/20" : "bg-white dark:bg-dark-border text-slate-400 border border-slate-200 dark:border-dark-border";
+                     const cls = active ? "bg-primary-600 text-white shadow-md shadow-primary-500/20" : "bg-white dark:bg-dark-border text-slate-400 border border-slate-200 dark:border-dark-border opacity-50";
                      filterDiv.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-lg text-xs font-bold transition-all ${cls}">${s}</button>`;
                  });
 
@@ -998,6 +1009,7 @@
                                     <button onclick="teacher.setStatus('${s.id}','${sub}','P')" class="${btnBase} ${getCls('P')}">P</button>
                                     <button onclick="teacher.setStatus('${s.id}','${sub}','A')" class="${btnBase} ${getCls('A')}">A</button>
                                     <button onclick="teacher.setStatus('${s.id}','${sub}','L')" class="${btnBase} ${getCls('L')}">L</button>
+                                    <button onclick="teacher.setStatus('${s.id}','${sub}','S/L')" class="${btnBase} ${getCls('S/L')}">S</button>
                                 </div>
                              </td>`;
                          });
@@ -1009,7 +1021,7 @@
             setStatus: (sid, sub, st) => {
                 if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
                 window.state.attendance[sid][sub] = st;
-                teacher.renderView(); // Optimistic update
+                teacher.renderView(); 
             },
 
             save: async () => {
@@ -1020,12 +1032,11 @@
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
 
-                // Ensure all students have data even if not rendered
                 window.state.students.forEach(s => {
                     final[s.id] = {};
                     subs.forEach(sub => {
                         const existing = window.state.attendance[s.id]?.[sub];
-                        // If subject is active in UI, use existing or default 'P'. If inactive, use '-'
+                        // If subject is active, save status. If inactive, save '-' (Not Taught)
                         if (window.state.activeSubjects[sub]) final[s.id][sub] = existing || 'P';
                         else final[s.id][sub] = '-';
                     });
@@ -1033,6 +1044,134 @@
                 
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`), {date:d, records:final});
                 ui.toast("Saved Successfully");
+            },
+
+            // --- REPORT GENERATION ---
+            loadReport: async () => {
+                const start = document.getElementById('rep-start').value;
+                const end = document.getElementById('rep-end').value;
+                if(!start || !end) return ui.toast("Select date range");
+                
+                const tbody = document.getElementById('rep-list');
+                const thead = document.getElementById('rep-thead');
+                tbody.innerHTML = '<tr><td colspan="100%" class="p-8 text-center text-slate-400">Processing Data...</td></tr>';
+                
+                const glob = window.state.school.subjects || [];
+                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
+                const subs = Array.from(new Set([...glob, ...spec]));
+
+                // Generate dates
+                const sDate = new Date(start);
+                const eDate = new Date(end);
+                const dates = [];
+                for(let dt=new Date(sDate); dt<=eDate; dt.setDate(dt.getDate()+1)) {
+                    dates.push(dt.toISOString().split('T')[0]);
+                }
+                
+                // Fetch Data
+                const snaps = await Promise.all(dates.map(d => getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`))));
+                const attData = {};
+                snaps.forEach((snap, i) => {
+                    if(snap.exists()) attData[dates[i]] = snap.data().records;
+                });
+
+                // Calculate Stats
+                // Structure: { studentId: { overall: {p, a, l, sl, total}, subjects: { subName: {p, total} } } }
+                const report = {};
+                
+                window.state.students.forEach(stu => {
+                    report[stu.id] = { overall: {p:0, a:0, l:0, sl:0, total:0}, subjects: {} };
+                    subs.forEach(sub => report[stu.id].subjects[sub] = {p:0, total:0});
+                    
+                    dates.forEach(d => {
+                        const rec = attData[d]?.[stu.id];
+                        if(rec) {
+                            subs.forEach(sub => {
+                                const st = rec[sub];
+                                if(st && st !== '-') {
+                                    report[stu.id].subjects[sub].total++;
+                                    report[stu.id].overall.total++;
+                                    
+                                    if(st === 'P') { report[stu.id].subjects[sub].p++; report[stu.id].overall.p++; }
+                                    else if(st === 'A') report[stu.id].overall.a++;
+                                    else if(st === 'L') report[stu.id].overall.l++;
+                                    else if(st === 'S/L') { report[stu.id].subjects[sub].p++; report[stu.id].overall.sl++; } // SL counts as Present for Lecture stats usually, or half. Counting as P for simplicity here.
+                                }
+                            });
+                        }
+                    });
+                });
+                
+                window.state.reportData = { report, subs, start, end }; // Store for CSV
+
+                // Render Table Header
+                let h = `<tr>
+                    <th class="px-4 py-3 sticky-col-1 bg-slate-50 dark:bg-dark-card border-b dark:border-dark-border">Roll</th>
+                    <th class="px-4 py-3 sticky-col-2 bg-slate-50 dark:bg-dark-card border-b dark:border-dark-border">Name</th>
+                    <th class="px-2 py-3 text-center border-b dark:border-dark-border text-primary-600 bg-primary-50 dark:bg-primary-900/20">Overall %</th>
+                    <th class="px-2 py-3 text-center border-b dark:border-dark-border text-xs text-slate-400">Total Days</th>`;
+                subs.forEach(s => h += `<th class="px-2 py-3 text-center border-b dark:border-dark-border min-w-[80px]">${s} %</th>`);
+                h += `</tr>`;
+                thead.innerHTML = h;
+
+                // Render Body
+                tbody.innerHTML = '';
+                window.state.students.sort((a,b)=>a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true})).forEach(stu => {
+                    const data = report[stu.id];
+                    const ovrPct = data.overall.total > 0 ? Math.round(( (data.overall.p + data.overall.sl) / data.overall.total) * 100) : 0;
+                    const daysPresent = snaps.filter((snap, i) => {
+                         // Day-wise calculation: Present if at least one subject P or SL
+                         if(!snap.exists()) return false;
+                         const rec = snap.data().records[stu.id];
+                         if(!rec) return false;
+                         return Object.values(rec).some(v => v === 'P' || v === 'S/L');
+                    }).length;
+
+                    let r = `<tr class="border-b border-slate-50 dark:border-dark-border hover:bg-slate-50 dark:hover:bg-dark-border/30">
+                        <td class="px-4 py-3 font-mono font-bold text-slate-500 sticky-col-1 bg-white dark:bg-dark-card border-r dark:border-dark-border">${stu.rollNo}</td>
+                        <td class="px-4 py-3 font-medium sticky-col-2 bg-white dark:bg-dark-card border-r dark:border-dark-border">${stu.name}</td>
+                        <td class="px-2 py-3 text-center font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/20">${ovrPct}%</td>
+                        <td class="px-2 py-3 text-center text-xs text-slate-400">${daysPresent}/${dates.length}</td>`;
+                    
+                    subs.forEach(sub => {
+                        const sData = data.subjects[sub];
+                        const sPct = sData.total > 0 ? Math.round((sData.p/sData.total)*100) : '-';
+                        const col = typeof sPct === 'number' ? (sPct < 75 ? 'text-red-500' : 'text-emerald-600') : 'text-slate-300';
+                        r += `<td class="px-2 py-3 text-center font-bold text-xs ${col}">${sPct === '-' ? '-' : sPct+'%'}</td>`;
+                    });
+                    r += `</tr>`;
+                    tbody.innerHTML += r;
+                });
+            },
+
+            downloadCSV: () => {
+                if(!window.state.reportData) return ui.toast("Generate report first");
+                const { report, subs, start, end } = window.state.reportData;
+                
+                let csv = `Roll,Name,Overall %,Days Present,${subs.map(s => s + ' %').join(',')}\n`;
+                
+                window.state.students.sort((a,b)=>a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true})).forEach(stu => {
+                    const data = report[stu.id];
+                    const ovrPct = data.overall.total > 0 ? Math.round(( (data.overall.p + data.overall.sl) / data.overall.total) * 100) : 0;
+                    
+                    // Simple logic for days present in csv - simplified since we didn't store array in state object above
+                    // For accuracy, usually we'd store 'daysPresent' in the report object too. 
+                    // We'll just output the calculated stats for now.
+                    
+                    const subPcts = subs.map(sub => {
+                        const sData = data.subjects[sub];
+                        return sData.total > 0 ? Math.round((sData.p/sData.total)*100) : '-';
+                    });
+                    
+                    csv += `"${stu.rollNo}","${stu.name}",${ovrPct}%,-,${subPcts.join(',')}\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Report_${window.state.currentClass}_${start}_${end}.csv`;
+                a.click();
             },
             
             filter: () => teacher.renderView(),
@@ -1044,9 +1183,6 @@
                 const s = window.state.students.find(st => st.id === sid);
                 if(!s) return;
 
-                // Fetch last 30 days logic (simplified for immediate response)
-                // In real app, we might query a separate stats collection or summary
-                // Here we iterate recent docs
                 const today = new Date();
                 let totalLec = 0;
                 let totalP = 0;
@@ -1058,12 +1194,10 @@
                 const subStats = {};
                 subs.forEach(sub => subStats[sub] = {p:0, t:0});
 
-                // Fetch current month data roughly (e.g. 1st to today)
                 const y = today.getFullYear();
                 const m = today.getMonth() + 1;
                 const days = today.getDate();
                 
-                // We create a promise array for this month's docs
                 const promises = [];
                 for(let i=1; i<=days; i++) {
                      const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
