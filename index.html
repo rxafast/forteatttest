@@ -892,6 +892,27 @@
                  const s = document.getElementById('new-s-global').value.toUpperCase();
                  if(s) { window.state.school.subjects.push(s); await admin.saveConfig(); admin.renderLists(); }
             },
+            delTeacher: async (i) => {
+                if(confirm("Remove teacher?")) {
+                    window.state.school.teachers.splice(i, 1);
+                    await admin.saveConfig();
+                    admin.renderLists();
+                }
+            },
+            delClass: async (i) => {
+                if(confirm("Delete class?")) {
+                    window.state.school.classes.splice(i, 1);
+                    await admin.saveConfig();
+                    admin.renderLists();
+                }
+            },
+            delGlobalSub: async (i) => {
+                if(confirm("Delete subject?")) {
+                    window.state.school.subjects.splice(i, 1);
+                    await admin.saveConfig();
+                    admin.renderLists();
+                }
+            },
             addSpecSub: async (cls) => {
                 const s = prompt(`Add specific subject for ${cls} (e.g. ROBOTICS):`);
                 if(s) {
