@@ -984,7 +984,8 @@
 
                 // Header
                 let h = `<tr><th class="px-4 py-3 sticky-col-1 bg-slate-50 dark:bg-dark-card border-b border-r dark:border-dark-border">Roll</th>
-                         <th class="px-4 py-3 sticky-col-2 bg-slate-50 dark:bg-dark-card border-b border-r dark:border-dark-border min-w-[150px]">Name</th>`;
+                         <th class="px-4 py-3 sticky-col-2 bg-slate-50 dark:bg-dark-card border-b border-r dark:border-dark-border min-w-[150px]">Name</th>
+                         <th class="px-2 py-3 text-center border-b dark:border-dark-border bg-slate-50 dark:bg-dark-card min-w-[100px]">Quick Mark</th>`; // New Column Header
                 subs.forEach(s => h += `<th class="px-2 py-3 text-center border-b dark:border-dark-border min-w-[120px]">${s}</th>`);
                 h += `</tr>`;
                 thead.innerHTML = h;
@@ -1003,6 +1004,14 @@
                                     ${s.name}
                                     <i class="fas fa-info-circle opacity-0 group-hover:opacity-100 text-slate-300 text-xs"></i>
                                 </button>
+                            </td>
+                            <!-- New Quick Mark Column -->
+                            <td class="px-2 py-3 text-center bg-white dark:bg-dark-card border-b border-slate-50 dark:border-dark-border">
+                                <div class="flex justify-center gap-1">
+                                    <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="w-6 h-6 rounded bg-emerald-100 text-emerald-600 hover:bg-emerald-200 text-[10px] font-bold transition-colors" title="Mark All Present">P</button>
+                                    <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="w-6 h-6 rounded bg-red-100 text-red-600 hover:bg-red-200 text-[10px] font-bold transition-colors" title="Mark All Absent">A</button>
+                                    <button onclick="teacher.setRowStatus('${s.id}', 'L')" class="w-6 h-6 rounded bg-yellow-100 text-yellow-600 hover:bg-yellow-200 text-[10px] font-bold transition-colors" title="Mark All Leave">L</button>
+                                </div>
                             </td>`;
                             
                          subs.forEach(sub => {
@@ -1028,6 +1037,22 @@
                          r += `</tr>`;
                          tbody.innerHTML += r;
                     });
+            },
+
+            // New function to handle bulk marking for a specific student row
+            setRowStatus: (sid, st) => {
+                if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
+                const glob = window.state.school.subjects || [];
+                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
+                const subs = Array.from(new Set([...glob, ...spec])); 
+                
+                subs.forEach(sub => {
+                    // Only mark if the subject is currently "active" (toggled on)
+                    if(window.state.activeSubjects[sub] !== false) {
+                        window.state.attendance[sid][sub] = st;
+                    }
+                });
+                teacher.renderView();
             },
 
             setStatus: (sid, sub, st) => {
