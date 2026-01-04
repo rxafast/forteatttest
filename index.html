@@ -843,6 +843,33 @@
                 s.subjects.forEach((sub, i) => {
                      sgList.innerHTML += `<span class="bg-slate-100 dark:bg-dark-border px-3 py-1 rounded-full text-xs font-bold dark:text-white flex items-center gap-2">${sub} <i onclick="admin.delGlobalSub(${i})" class="fas fa-times cursor-pointer text-slate-400"></i></span>`;
                 });
+
+                // Class Specific Subjects (NEW)
+                const ssList = document.getElementById('list-s-specific');
+                ssList.innerHTML = '<h3 class="font-bold text-sm text-slate-500 uppercase mt-4 mb-2">Class Specific Subjects</h3>';
+                
+                s.classes.forEach(cls => {
+                    const specs = s.class_subjects?.[cls] || [];
+                    let pills = '';
+                    if(specs.length === 0) pills = '<span class="text-xs text-slate-400 italic">No additional subjects</span>';
+                    else {
+                        specs.forEach((sub, i) => {
+                            pills += `<span class="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1">${sub} <i onclick="admin.delSpecSub('${cls}', ${i})" class="fas fa-times cursor-pointer hover:text-red-500 ml-1"></i></span>`;
+                        });
+                    }
+
+                    ssList.innerHTML += `
+                        <div class="bg-white dark:bg-dark-card p-4 rounded-xl shadow-sm border border-slate-100 dark:border-dark-border flex flex-col gap-3">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold dark:text-white text-sm">${cls}</h4>
+                                <button onclick="admin.addSpecSub('${cls}')" class="text-xs btn-secondary py-1 px-2 h-auto"><i class="fas fa-plus mr-1"></i> Add</button>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                ${pills}
+                            </div>
+                        </div>
+                    `;
+                });
             },
             
             addTeacher: async () => {
@@ -864,6 +891,28 @@
             addGlobalSubject: async () => {
                  const s = document.getElementById('new-s-global').value.toUpperCase();
                  if(s) { window.state.school.subjects.push(s); await admin.saveConfig(); admin.renderLists(); }
+            },
+            addSpecSub: async (cls) => {
+                const s = prompt(`Add specific subject for ${cls} (e.g. ROBOTICS):`);
+                if(s) {
+                    const up = s.toUpperCase().trim();
+                    if(!window.state.school.class_subjects) window.state.school.class_subjects = {};
+                    if(!window.state.school.class_subjects[cls]) window.state.school.class_subjects[cls] = [];
+                    
+                    if(!window.state.school.class_subjects[cls].includes(up)) {
+                        window.state.school.class_subjects[cls].push(up);
+                        await admin.saveConfig();
+                        admin.renderLists();
+                        ui.toast("Subject Added");
+                    }
+                }
+            },
+            delSpecSub: async (cls, i) => {
+                if(confirm("Remove this subject from " + cls + "?")) {
+                    window.state.school.class_subjects[cls].splice(i, 1);
+                    await admin.saveConfig();
+                    admin.renderLists();
+                }
             },
             saveConfig: async () => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school),
             
