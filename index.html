@@ -765,7 +765,7 @@
                 const list = document.getElementById('admin-notice-list');
                 list.innerHTML = '<div class="text-center text-slate-400">Loading...</div>';
                 
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'notices', 'all'), orderBy('date', 'desc'), limit(20));
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'notices'), orderBy('date', 'desc'), limit(20));
                 onSnapshot(q, (snap) => {
                     list.innerHTML = '';
                     if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-400 py-10">No notices posted yet.</div>'; return; }
@@ -792,7 +792,7 @@
                 const body = document.getElementById('note-body').value;
                 if(!title || !body) return ui.toast("Fill all fields");
                 
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'notices', 'all'), {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'notices'), {
                     title, body, date: new Date().toISOString()
                 });
                 
@@ -803,7 +803,7 @@
             },
 
             deleteNotice: async (id) => {
-                if(confirm("Delete this notice?")) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notices', 'all', id), {}, {delete:true}); 
+                if(confirm("Delete this notice?")) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notices', id), {}, {delete:true}); 
             },
 
             // --- CRUD (Standard) ---
@@ -1292,7 +1292,7 @@
             
             // --- NOTICES ---
             checkNotices: () => {
-                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'notices', 'all'), orderBy('date', 'desc'), limit(5));
+                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'notices'), orderBy('date', 'desc'), limit(5));
                  onSnapshot(q, snap => {
                      const list = document.getElementById('teacher-notice-list');
                      list.innerHTML = '';
