@@ -917,7 +917,54 @@
             },
             
             dlDaily: async () => {
-                alert("Generating...");
+                const d = document.getElementById('rep-day-date').value;
+                if(!d) return alert("Select Date");
+                
+                toast("Generating Report...");
+                
+                const classes = window.state.school.classes || [];
+                let csv = "Class,Total Students,Present,Absent,Leave,Short Leave,Attendance %\n";
+                
+                try {
+                    const promises = classes.map(async (cls) => {
+                        try {
+                            const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`));
+                            
+                            if(snap.exists()) {
+                                const recs = snap.data().records || {};
+                                const total = Object.keys(recs).length;
+                                let p=0, a=0, l=0, sl=0;
+                                
+                                Object.values(recs).forEach(r => {
+                                    const vals = Object.values(r);
+                                    if(vals.includes('P')) p++;
+                                    else if(vals.includes('S/L')) sl++;
+                                    else if(vals.includes('L')) l++;
+                                    else if(vals.includes('A')) a++;
+                                });
+                                
+                                const pct = total > 0 ? Math.round((p/total)*100) : 0;
+                                return `${cls},${total},${p},${a},${l},${sl},${pct}%`;
+                            } else {
+                                return `${cls},-,Not Marked,-,-,-,-`;
+                            }
+                        } catch (err) {
+                            console.error(`Error fetching ${cls}:`, err);
+                            return `${cls},Error,Error,-,-,-,-`;
+                        }
+                    });
+                    
+                    const rows = await Promise.all(promises);
+                    csv += rows.join('\n');
+                    
+                    const b = new Blob([csv], {type:'text/csv'});
+                    const u = URL.createObjectURL(b);
+                    const a = document.createElement('a'); a.href=u; a.download=`Daily_Summary_${d}.csv`; a.click();
+                    toast("Download Started");
+                } catch (e) {
+                    console.error(e);
+                    alert("Error generating report: " + e.message);
+                }
             },
             
             backupData: async () => {
@@ -942,472 +989,3 @@
         };
 
         // --- TEACHER CONTROLLER ---
-        window.teacher = {
-            init: () => {
-                document.getElementById('view-app').classList.remove('hidden');
-                document.getElementById('view-login').classList.add('hidden');
-                document.getElementById('view-teacher-wrapper').classList.remove('hidden');
-                
-                // Header
-                document.getElementById('header-title').innerText = window.state.currentClass;
-                
-                // Setup Date
-                const d = getLocalDate();
-                document.getElementById('att-date').value = d;
-                
-                // Setup Report Date Defaults
-                const now = new Date();
-                const mStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                document.getElementById('teacher-rep-month').value = mStr;
-                document.getElementById('teacher-rep-date').value = d;
-
-                // Listen to class data
-                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), snap => {
-                    window.state.students = snap.exists() ? (snap.data().students || []) : [];
-                    teacher.renderList();
-                    if(!document.getElementById('tab-content-report').classList.contains('hidden')) teacher.loadReport();
-                });
-                
-                // Initialize default tab
-                teacher.switchView('mark');
-                teacher.loadData();
-            },
-            
-            switchView: (view) => {
-                document.getElementById('tab-content-mark').classList.toggle('hidden', view !== 'mark');
-                document.getElementById('tab-content-report').classList.toggle('hidden', view !== 'report');
-                
-                document.getElementById('btn-tab-mark').className = view === 'mark' ? "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow" : "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-slate-600 hover:bg-white/[0.12] hover:text-slate-800";
-                document.getElementById('btn-tab-report').className = view === 'report' ? "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow" : "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-slate-600 hover:bg-white/[0.12] hover:text-slate-800";
-                
-                if (view === 'report') teacher.loadReport();
-            },
-            
-            toggleReportMode: (mode) => {
-                document.getElementById('rep-controls-monthly').classList.toggle('hidden', mode !== 'monthly');
-                document.getElementById('rep-controls-daily').classList.toggle('hidden', mode !== 'daily');
-                document.getElementById('btn-rep-mode-monthly').className = mode === 'monthly' ? "px-3 py-1 text-xs font-bold rounded-md bg-white shadow text-primary transition-all" : "px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
-                document.getElementById('btn-rep-mode-daily').className = mode === 'daily' ? "px-3 py-1 text-xs font-bold rounded-md bg-white shadow text-primary transition-all" : "px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
-                
-                // Clear table
-                document.getElementById('teacher-rep-list').innerHTML = '';
-                document.getElementById('rep-thead').innerHTML = '';
-            },
-
-            loadData: () => {
-                const d = document.getElementById('att-date').value;
-                // Determine subjects
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec]));
-                
-                const filter = document.getElementById('att-subjects-filter');
-                filter.innerHTML = '';
-                subs.forEach(s => {
-                    if(window.state.activeSubjects[s] === undefined) window.state.activeSubjects[s] = true;
-                    const active = window.state.activeSubjects[s];
-                    // Update button styling for toggle
-                    const activeClass = "bg-indigo-100 text-indigo-700 border-indigo-200 filter-btn-active";
-                    const inactiveClass = "bg-slate-100 text-slate-400 border-slate-200 filter-btn-inactive";
-                    
-                    filter.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${active ? activeClass : inactiveClass}">${s}</button>`;
-                });
-                
-                if(window.state.dailyUnsub) window.state.dailyUnsub();
-                window.state.dailyUnsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`), snap => {
-                    window.state.attendance = snap.exists() ? snap.data().records : {};
-                    teacher.renderList();
-                });
-            },
-            
-            toggleSub: (s) => {
-                window.state.activeSubjects[s] = !window.state.activeSubjects[s];
-                teacher.loadData(); // Re-render pills
-            },
-            
-            setRowStatus: (sid, status) => {
-                if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec]));
-                subs.forEach(sub => {
-                    if (window.state.activeSubjects[sub] !== false) window.state.attendance[sid][sub] = status;
-                });
-                teacher.renderList();
-            },
-
-            renderList: () => {
-                // DESKTOP TABLE RENDER
-                const deskList = document.getElementById('att-list-desktop');
-                const deskHead = document.getElementById('att-thead-desktop');
-                
-                // MOBILE LIST RENDER
-                const mobileList = document.getElementById('att-list-mobile');
-                
-                const search = document.getElementById('att-search').value.toLowerCase();
-                document.getElementById('student-count').innerText = `${window.state.students.length} Students`;
-                
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec]));
-                const activeSubs = subs.filter(s => window.state.activeSubjects[s] !== false);
-                
-                // --- DESKTOP HEADER ---
-                let headerHTML = `<tr><th class="px-4 py-3 w-16 text-center bg-slate-100 border-b border-r border-slate-200">Roll</th><th class="px-4 py-3 w-40 bg-slate-100 border-b border-r border-slate-200">Name <span class="text-[10px] text-slate-400 font-normal">(Actions)</span></th>`;
-                activeSubs.forEach(sub => { 
-                    headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200">${sub}</th>`; 
-                });
-                headerHTML += `</tr>`;
-                deskHead.innerHTML = headerHTML;
-                
-                deskList.innerHTML = '';
-                mobileList.innerHTML = '';
-                
-                const getBtnClass = (val, current) => {
-                    let base = "flex-1 py-1.5 text-[10px] font-bold border-r last:border-r-0 border-slate-200 transition-colors first:rounded-l last:rounded-r";
-                    if (val !== current) return base + " text-slate-400 bg-white hover:bg-slate-50";
-                    if (val === 'P') return base + " bg-green-500 text-white";
-                    if (val === 'A') return base + " bg-red-500 text-white";
-                    if (val === 'L') return base + " bg-yellow-500 text-white";
-                    if (val === 'S/L') return base + " bg-orange-500 text-white";
-                };
-
-                window.state.students
-                    .filter(s => s.name.toLowerCase().includes(search) || s.rollNo.includes(search))
-                    .sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true}))
-                    .forEach((s, idx) => {
-                        const rec = window.state.attendance[s.id] || {};
-                        
-                        // --- DESKTOP ROW ---
-                        let dRow = `<tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
-                            <td class="px-4 py-3 font-mono text-slate-600 font-bold text-center bg-white border-r border-slate-100 shadow-sm">${s.rollNo}</td>
-                            <td class="px-4 py-3 font-medium text-slate-800 bg-white border-r border-slate-100 shadow-sm whitespace-nowrap">
-                                <div class="flex justify-between items-center">
-                                    <span class="cursor-pointer" onclick="teacher.editStudent(${idx})">${s.name}</span>
-                                    <div class="flex gap-1 ml-2">
-                                        <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded border border-green-200 hover:bg-green-100" title="All P">P</button>
-                                        <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-200 hover:bg-red-100" title="All A">A</button>
-                                        <button onclick="teacher.setRowStatus('${s.id}', 'L')" class="text-[10px] bg-yellow-50 text-yellow-600 px-1.5 py-0.5 rounded border border-yellow-200 hover:bg-yellow-100" title="All L">L</button>
-                                    </div>
-                                </div>
-                            </td>`;
-                            
-                        // --- MOBILE CARD ---
-                        let mCard = `<div class="bg-white rounded-lg shadow-sm border border-slate-200 p-3">
-                            <div class="flex justify-between items-center mb-2 border-b border-slate-50 pb-2">
-                                <div><span class="font-bold text-slate-800">${s.name}</span> <span class="text-xs text-slate-400 font-mono">(${s.rollNo})</span></div>
-                                <div class="flex gap-1">
-                                    <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100">All P</button>
-                                    <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">All A</button>
-                                    <button onclick="teacher.setRowStatus('${s.id}', 'L')" class="text-[10px] font-bold text-yellow-600 bg-yellow-50 px-2 py-1 rounded border border-yellow-100">All L</button>
-                                    <i class="fas fa-ellipsis-v text-slate-300 ml-2 px-2" onclick="teacher.editStudent(${idx})"></i>
-                                </div>
-                            </div>
-                            <div class="space-y-2">`;
-
-                        activeSubs.forEach(sub => {
-                            const status = rec[sub] || 'P'; // Default
-                            
-                            // Desktop Cell
-                            dRow += `<td class="px-4 py-2 text-center">
-                                <div class="flex border border-slate-200 rounded w-full max-w-[180px] mx-auto shadow-sm">
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
-                                </div>
-                            </td>`;
-                            
-                            // Mobile Row inside Card
-                            mCard += `
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-slate-500 w-16">${sub}</span>
-                                <div class="flex border border-slate-200 rounded overflow-hidden flex-1 max-w-[200px]">
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
-                                </div>
-                            </div>`;
-                        });
-                        
-                        dRow += `</tr>`;
-                        mCard += `</div></div>`;
-                        
-                        deskList.innerHTML += dRow;
-                        mobileList.innerHTML += mCard;
-                    });
-            },
-            
-            setStatus: (sid, key, status) => {
-                if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
-                window.state.attendance[sid][key] = status;
-                teacher.renderList();
-            },
-            
-            save: async () => {
-                const d = document.getElementById('att-date').value;
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`);
-                const finalData = JSON.parse(JSON.stringify(window.state.attendance)); 
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec]));
-                
-                window.state.students.forEach(s => {
-                    if(!finalData[s.id]) finalData[s.id] = {};
-                    subs.forEach(sub => {
-                        if(window.state.activeSubjects[sub] !== false) {
-                            if(!finalData[s.id][sub]) finalData[s.id][sub] = 'P';
-                        } else {
-                            finalData[s.id][sub] = '-';
-                        }
-                    });
-                });
-                
-                await setDoc(ref, { date: d, records: finalData }, {merge: true});
-                toast("Attendance Saved!");
-            },
-            
-            filter: () => teacher.renderList(),
-            
-            // --- CLASS REPORT LOGIC ---
-            loadReport: async () => {
-                const tbody = document.getElementById('teacher-rep-list');
-                const thead = document.getElementById('rep-thead');
-                const m = document.getElementById('teacher-rep-month').value;
-                const cls = window.state.currentClass;
-                
-                if(!m) return;
-                tbody.innerHTML = '<tr><td colspan="100%" class="p-6 text-center text-slate-400">Calculating...</td></tr>';
-                
-                const [y, mm] = m.split('-');
-                const days = new Date(y, mm, 0).getDate();
-                const atts = {};
-                
-                // 1. Fetch data
-                await Promise.all(Array.from({length:days}, (_,i) => {
-                    const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
-                    return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`))
-                        .then(s => atts[d] = s.exists() ? s.data().records : {});
-                }));
-                
-                // 2. Build Header with Subjects
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec]));
-                
-                let headerHTML = `<tr>
-                                    <th class="px-4 py-3 w-20 sticky-col-1 bg-slate-100 border-b border-r border-slate-200">Roll</th>
-                                    <th class="px-4 py-3 sticky-col-2 bg-slate-100 border-b border-r border-slate-200">Name</th>`;
-                
-                subs.forEach(sub => {
-                    headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 min-w-[120px]">${sub}</th>`;
-                });
-                headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 bg-slate-100">Total %</th></tr>`;
-                thead.innerHTML = headerHTML;
-                
-                tbody.innerHTML = '';
-                
-                window.state.students.forEach(s => {
-                    let totalP = 0, totalLec = 0;
-                    let rowHTML = `<tr class="border-b border-slate-50 hover:bg-slate-50">
-                        <td class="px-4 py-3 font-mono font-bold text-slate-600 sticky-col-1 bg-white border-r border-slate-100">${s.rollNo}</td>
-                        <td class="px-4 py-3 font-medium text-slate-800 sticky-col-2 bg-white border-r border-slate-100">${s.name}</td>`;
-                        
-                    subs.forEach(sub => {
-                        let subP = 0, subTotal = 0;
-                        for(let i=1; i<=days; i++) {
-                            const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
-                            const rec = atts[d]?.[s.id];
-                            if(rec && rec[sub] && rec[sub] !== '-') {
-                                subTotal++;
-                                if(rec[sub] === 'P' || rec[sub] === 'S/L') subP++; // Assuming SL counts
-                            }
-                        }
-                        totalP += subP;
-                        totalLec += subTotal;
-                        const pct = subTotal > 0 ? Math.round((subP/subTotal)*100) : 0;
-                        const color = pct < 75 ? 'text-red-500' : 'text-green-600';
-                        
-                        rowHTML += `<td class="px-4 py-3 text-center text-xs">
-                            <div class="font-bold ${color}">${pct}%</div>
-                            <div class="text-slate-400 text-[10px]">${subP}/${subTotal}</div>
-                        </td>`;
-                    });
-                    
-                    const overallPct = totalLec > 0 ? Math.round((totalP/totalLec)*100) : 0;
-                    rowHTML += `<td class="px-4 py-3 text-center font-bold text-blue-600 bg-slate-50">${overallPct}%</td></tr>`;
-                    
-                    tbody.innerHTML += rowHTML;
-                });
-            },
-
-            loadDailyReport: async () => {
-                const d = document.getElementById('teacher-rep-date').value;
-                const cls = window.state.currentClass;
-                const tbody = document.getElementById('teacher-rep-list');
-                const thead = document.getElementById('rep-thead');
-                
-                if(!d) return;
-                tbody.innerHTML = '<tr><td colspan="100%" class="p-6 text-center text-slate-400">Loading...</td></tr>';
-                
-                const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`));
-                const record = snap.exists() ? snap.data().records : {};
-
-                // Headers
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[cls] || [];
-                const subs = Array.from(new Set([...glob, ...spec]));
-                
-                let h = `<tr><th class="px-4 py-3 w-20 sticky-col-1 bg-slate-100 border-b border-r border-slate-200">Roll</th><th class="px-4 py-3 sticky-col-2 bg-slate-100 border-b border-r border-slate-200">Name</th>`;
-                subs.forEach(s => h+=`<th class="px-4 py-3 text-center bg-slate-100 border-b min-w-[100px]">${s}</th>`);
-                h += `</tr>`;
-                thead.innerHTML = h;
-                
-                tbody.innerHTML = '';
-                window.state.students.forEach(s => {
-                    const rec = record[s.id] || {};
-                    let r = `<tr class="border-b hover:bg-slate-50">
-                        <td class="px-4 py-3 font-mono font-bold text-slate-600 sticky-col-1 bg-white border-r border-slate-100">${s.rollNo}</td>
-                        <td class="px-4 py-3 font-medium text-slate-800 sticky-col-2 bg-white border-r border-slate-100">${s.name}</td>`;
-                    
-                    subs.forEach(sub => {
-                        const st = rec[sub] || '-';
-                        let color = 'text-slate-300';
-                        let bg = '';
-                        if(st==='P') { color='text-green-700'; bg='bg-green-50'; }
-                        if(st==='A') { color='text-red-700'; bg='bg-red-50'; }
-                        if(st==='L') { color='text-yellow-700'; bg='bg-yellow-50'; }
-                        if(st==='S/L') { color='text-orange-700'; bg='bg-orange-50'; }
-                        r += `<td class="text-center text-xs font-bold ${color} ${bg} border-l border-slate-50">${st}</td>`;
-                    });
-                    r += `</tr>`;
-                    tbody.innerHTML += r;
-                });
-            },
-
-            openAddStudentModal: () => {
-                window.state.editingStudentIdx = null;
-                document.getElementById('modal-student-title').innerText = "Add Student";
-                document.getElementById('mod-stu-roll').value = "";
-                document.getElementById('mod-stu-name').value = "";
-                document.getElementById('btn-del-student').classList.add('hidden');
-                document.getElementById('modal-student').classList.remove('hidden');
-            },
-
-            editStudent: (idx) => {
-                window.state.editingStudentIdx = idx;
-                const s = window.state.students[idx];
-                document.getElementById('modal-student-title').innerText = "Edit Student";
-                document.getElementById('mod-stu-roll').value = s.rollNo;
-                document.getElementById('mod-stu-name').value = s.name;
-                document.getElementById('btn-del-student').classList.remove('hidden');
-                document.getElementById('modal-student').classList.remove('hidden');
-            },
-
-            saveStudent: async () => {
-                const r = document.getElementById('mod-stu-roll').value;
-                const n = document.getElementById('mod-stu-name').value;
-                if(!r || !n) return alert("Fill all fields");
-                if (window.state.editingStudentIdx !== null) {
-                    window.state.students[window.state.editingStudentIdx].rollNo = r;
-                    window.state.students[window.state.editingStudentIdx].name = n;
-                } else {
-                    window.state.students.push({id: Date.now().toString(), rollNo: r, name: n});
-                }
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
-                document.getElementById('modal-student').classList.add('hidden');
-                teacher.renderList();
-                toast(window.state.editingStudentIdx !== null ? "Updated" : "Added");
-            },
-
-            deleteStudent: async () => {
-                if(confirm("Delete student?")) {
-                    window.state.students.splice(window.state.editingStudentIdx, 1);
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
-                    document.getElementById('modal-student').classList.add('hidden');
-                    teacher.renderList();
-                }
-            },
-
-            importFile: (input) => {
-                const f = input.files[0];
-                if(!f) return;
-                const r = new FileReader();
-                r.onload = async (e) => {
-                    const lines = e.target.result.split('\n');
-                    let count = 0;
-                    let skipped = 0;
-                    const newStudents = [];
-
-                    lines.forEach(l => {
-                        const [roll, name] = l.split(',');
-                        if(roll && name) {
-                            const cleanRoll = roll.trim();
-                            const cleanName = name.trim();
-                            
-                            // Check for duplicates
-                            const exists = window.state.students.some(s => s.rollNo === cleanRoll);
-                            if (!exists) {
-                                newStudents.push({id: Date.now()+Math.random().toString(), rollNo: cleanRoll, name: cleanName});
-                                count++;
-                            } else {
-                                skipped++;
-                            }
-                        }
-                    });
-
-                    if(count > 0) {
-                        // Merge and Sort to ensure order is kept
-                        window.state.students = [...window.state.students, ...newStudents].sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true}));
-                        
-                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
-                        teacher.renderList();
-                        toast(`Imported ${count}. Skipped ${skipped} duplicates.`);
-                    } else if (skipped > 0) {
-                        toast(`No new students. Skipped ${skipped} duplicates.`);
-                    }
-                    input.value = '';
-                };
-                r.readAsText(f);
-            }
-        };
-
-        // --- BOOTSTRAP ---
-        onAuthStateChanged(auth, (user) => {
-            window.state.user = user;
-            if (user) {
-                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), (snap) => {
-                    if(snap.exists()) {
-                        window.state.school = snap.data();
-                        const role = localStorage.getItem('fcs_role_attempt');
-                        if(role === 'admin') {
-                            admin.init();
-                        } else if (localStorage.getItem('fcs_current_class')) {
-                            window.state.currentClass = localStorage.getItem('fcs_current_class');
-                            teacher.init();
-                        } else {
-                             const teacherData = window.state.school.teachers.find(t => t.email.toLowerCase() === user.email.toLowerCase());
-                             if(teacherData) {
-                                 const sel = document.getElementById('inp-teacher-class');
-                                 sel.innerHTML = '';
-                                 teacherData.assignedClasses.forEach(c => sel.innerHTML += `<option>${c}</option>`);
-                                 document.getElementById('teacher-class-select-wrapper').classList.remove('hidden');
-                                 document.getElementById('btn-teacher-login').classList.add('hidden');
-                                 document.getElementById('inp-teacher-email').disabled = true;
-                                 document.getElementById('inp-teacher-pass').disabled = true;
-                             }
-                        }
-                    } else {
-                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school);
-                    }
-                });
-            } else {
-                document.getElementById('view-login').classList.remove('hidden');
-                document.getElementById('view-app').classList.add('hidden');
-            }
-        });
-
-    </script>
-</body>
-</html>
