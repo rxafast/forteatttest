@@ -1,37 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Forte Admin | Next Gen</title>
+    <title>Forte Admin | Modern</title>
     
-    <!-- Fonts -->
+    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Icons & Charts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        primary: { DEFAULT: '#6366f1', 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' },
-                        dark: { bg: '#09090b', card: '#18181b', border: '#27272a', text: '#e4e4e7' }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.3s ease-out',
-                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                    },
-                    keyframes: {
-                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+                        primary: '#4f46e5', // Indigo 600
+                        secondary: '#64748b', // Slate 500
+                        background: '#f8fafc', // Slate 50
                     }
                 }
             }
@@ -39,441 +27,410 @@
     </script>
     <style>
         body { -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
-        .dark .glass { background: rgba(24, 24, 27, 0.7); }
         
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        .sticky-col-1 { position: sticky; left: 0; z-index: 10; }
-        .sticky-col-2 { position: sticky; left: 60px; z-index: 10; box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1); }
+        .status-btn { transition: all 0.1s ease; }
+        .status-btn:active { transform: scale(0.95); }
+
+        /* Dimmed State */
+        .dimmed-item { opacity: 0.4; filter: grayscale(100%); }
+        
+        /* Toggle Button State */
+        .filter-btn-active { @apply bg-indigo-600 text-white border-indigo-600; }
+        .filter-btn-inactive { @apply bg-white text-slate-500 border-slate-300; }
+
+        /* Sticky Columns for Mobile Table - Optimized Widths */
+        .sticky-col-1 { position: sticky; left: 0; z-index: 10; width: 60px; min-width: 60px; } 
+        .sticky-col-2 { position: sticky; left: 60px; z-index: 10; min-width: 140px; max-width: 160px; box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1); }
+        
+        /* Ensure sticky headers are above sticky cells */
+        thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
+        
+        /* Dimmed State for Table Cells only */
+        .dimmed-cell { opacity: 0.3; pointer-events: none; filter: grayscale(100%); background-color: #f8fafc; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-dark-bg dark:text-dark-text h-screen flex flex-col overflow-hidden transition-colors duration-300">
+<body class="bg-background text-slate-800 h-screen flex flex-col overflow-hidden font-sans">
 
-    <!-- TOAST CONTAINER -->
-    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+    <!-- NOTIFICATIONS -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- ===================== LOGIN SCREEN ===================== -->
-    <div id="view-login" class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-dark-bg transition-all duration-500">
-        <!-- Abstract Background Shapes -->
-        <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-500/20 rounded-full blur-[100px] animate-pulse"></div>
-            <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/20 rounded-full blur-[100px] animate-pulse" style="animation-delay: 1s;"></div>
-        </div>
-
-        <div class="relative w-full max-w-md p-6 animate-slide-up">
-            <div class="bg-white/80 dark:bg-dark-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200 dark:border-dark-border overflow-hidden">
-                <div class="p-8 text-center">
-                    <div class="w-16 h-16 bg-gradient-to-tr from-primary-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary-500/30">
-                        <i class="fas fa-cube text-3xl text-white"></i>
+    <div id="view-login" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-900 to-slate-900 p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-300 scale-100">
+            <!-- Header -->
+            <div class="bg-primary p-8 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-black/10"></div>
+                <div class="relative z-10">
+                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+                        <i class="fas fa-graduation-cap text-3xl text-white"></i>
                     </div>
-                    <h1 class="text-3xl font-extrabold tracking-tight mb-2">Forte Admin</h1>
-                    <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Next Gen School Management</p>
+                    <h1 class="text-2xl font-bold text-white tracking-tight">Forte College</h1>
+                    <p id="conn-status" class="text-indigo-200 text-xs font-medium mt-1 uppercase tracking-wider">System Ready</p>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-100">
+                <button onclick="ui.setLoginTab('teacher')" id="tab-login-teacher" class="flex-1 py-4 text-sm font-semibold text-primary border-b-2 border-primary bg-indigo-50/50 transition-colors">Teacher</button>
+                <button onclick="ui.setLoginTab('admin')" id="tab-login-admin" class="flex-1 py-4 text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors">Administrator</button>
+            </div>
+
+            <!-- Forms -->
+            <div class="p-8">
+                <!-- Teacher Form -->
+                <div id="form-teacher" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                        <input type="email" id="inp-teacher-email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="teacher@forte.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+                        <input type="password" id="inp-teacher-pass" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="••••••••">
+                    </div>
+                    
+                    <div id="teacher-class-select-wrapper" class="hidden">
+                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Class</label>
+                         <select id="inp-teacher-class" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm mb-2 focus:ring-2 focus:ring-green-500"></select>
+                         <button onclick="auth.enterClass()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-600/20 transition-all">
+                            Enter Class <i class="fas fa-arrow-right ml-2"></i>
+                         </button>
+                    </div>
+
+                    <button id="btn-teacher-login" onclick="auth.login('teacher')" class="w-full bg-primary hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-600/20 transition-all">
+                        Login
+                    </button>
                 </div>
 
-                <div class="px-8 pb-8">
-                    <div class="flex p-1 bg-slate-100 dark:bg-dark-bg rounded-xl mb-6">
-                        <button onclick="ui.setLoginTab('teacher')" id="tab-login-teacher" class="flex-1 py-2.5 text-sm font-bold rounded-lg shadow-sm bg-white dark:bg-dark-card text-primary-600 transition-all">Teacher</button>
-                        <button onclick="ui.setLoginTab('admin')" id="tab-login-admin" class="flex-1 py-2.5 text-sm font-bold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all">Admin</button>
+                <!-- Admin Form -->
+                <div id="form-admin" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Email</label>
+                        <input type="email" id="inp-admin-email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="admin@forte.com">
                     </div>
-
-                    <!-- Teacher Form -->
-                    <div id="form-teacher" class="space-y-4">
-                        <input type="email" id="inp-teacher-email" class="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all dark:text-white" placeholder="teacher@forte.com">
-                        <input type="password" id="inp-teacher-pass" class="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all dark:text-white" placeholder="••••••••">
-                        
-                        <div id="teacher-class-select-wrapper" class="hidden animate-fade-in">
-                             <select id="inp-teacher-class" class="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl mb-3 dark:text-white focus:ring-2 focus:ring-green-500"></select>
-                             <button onclick="auth.enterClass()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-500/30 hover:scale-[1.02] transition-transform">
-                                Enter Workspace <i class="fas fa-arrow-right ml-2"></i>
-                             </button>
-                        </div>
-
-                        <button id="btn-teacher-login" onclick="auth.login('teacher')" class="w-full bg-gradient-to-r from-primary-600 to-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary-500/30 hover:scale-[1.02] transition-transform">
-                            Sign In
-                        </button>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+                        <input type="password" id="inp-admin-pass" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="••••••••">
                     </div>
-
-                    <!-- Admin Form -->
-                    <div id="form-admin" class="space-y-4 hidden">
-                        <input type="email" id="inp-admin-email" class="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none dark:text-white" placeholder="admin@forte.com">
-                        <input type="password" id="inp-admin-pass" class="w-full px-4 py-3 bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-primary-500 focus:outline-none dark:text-white" placeholder="••••••••">
-                        <button onclick="auth.login('admin')" class="w-full bg-slate-900 dark:bg-white dark:text-black text-white font-bold py-3.5 rounded-xl shadow-lg hover:scale-[1.02] transition-transform">
-                            Access Console
-                        </button>
-                        <div class="text-center mt-2">
-                            <button onclick="auth.resetPass()" class="text-xs font-semibold text-primary-600 hover:underline">Forgot Password?</button>
-                        </div>
+                    <button id="btn-admin-login" onclick="auth.login('admin')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg shadow-slate-800/20 transition-all">
+                        Access Dashboard
+                    </button>
+                    <div class="text-center mt-4">
+                        <button onclick="auth.resetPass()" class="text-xs text-primary hover:underline">Forgot Password?</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ===================== MAIN APP ===================== -->
-    <div id="view-app" class="flex-1 flex h-full hidden opacity-0 transition-opacity duration-500">
+    <!-- ===================== MAIN APP LAYOUT ===================== -->
+    <div id="view-app" class="flex-1 flex flex-col h-full hidden">
         
-        <!-- SIDEBAR (Desktop) -->
-        <aside class="hidden md:flex flex-col w-72 bg-white dark:bg-dark-card border-r border-slate-200 dark:border-dark-border p-4 z-20">
-            <div class="flex items-center gap-3 px-2 mb-8 mt-2">
-                <div class="w-10 h-10 bg-gradient-to-tr from-primary-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20 text-white">
-                    <i class="fas fa-cube text-lg"></i>
-                </div>
+        <!-- Navbar -->
+        <header class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm z-30 shrink-0">
+            <div class="flex items-center gap-3">
+                <!-- Mobile Menu Button -->
+                <button onclick="ui.toggleSidebar()" class="md:hidden text-slate-500 hover:text-slate-700 p-2 rounded-md focus:bg-slate-100">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+
+                <!-- NEW: Back Button for Admin View Mode -->
+                <button id="btn-admin-back" onclick="admin.exitClassView()" class="hidden text-slate-500 hover:text-primary p-2 rounded-md hover:bg-slate-50 transition-colors font-medium text-sm flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                
+                <div class="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-lg shrink-0">F</div>
                 <div>
-                    <h1 class="font-bold text-lg leading-none tracking-tight">Forte</h1>
-                    <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Workspace</span>
+                    <h1 class="font-bold text-slate-800 text-sm leading-tight" id="header-title">Dashboard</h1>
+                    <p class="text-[10px] text-slate-500 font-medium" id="header-subtitle">Welcome</p>
                 </div>
             </div>
-
-            <!-- Navigation -->
-            <nav class="flex-1 space-y-1">
-                <div id="nav-teacher-links" class="hidden space-y-1">
-                    <p class="px-3 text-xs font-bold text-slate-400 uppercase mb-2 mt-4">Classroom</p>
-                    <button onclick="teacher.switchView('mark')" id="nav-t-mark" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3">
-                        <i class="fas fa-check-circle w-5 text-center"></i> Attendance
-                    </button>
-                    <button onclick="teacher.switchView('report')" id="nav-t-report" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3">
-                        <i class="fas fa-chart-pie w-5 text-center"></i> Reports
-                    </button>
-                    <p class="px-3 text-xs font-bold text-slate-400 uppercase mb-2 mt-6">School</p>
-                    <button onclick="ui.toggleNotices()" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3">
-                        <i class="fas fa-bell w-5 text-center"></i> Notice Board <span id="notice-badge" class="hidden w-2 h-2 bg-red-500 rounded-full ml-auto"></span>
-                    </button>
-                </div>
-
-                <div id="nav-admin-links" class="hidden space-y-1">
-                    <p class="px-3 text-xs font-bold text-slate-400 uppercase mb-2">Overview</p>
-                    <button onclick="ui.switchAdminTab('dashboard')" id="nav-dashboard" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3">
-                        <i class="fas fa-th-large w-5 text-center"></i> Dashboard
-                    </button>
-                    
-                    <p class="px-3 text-xs font-bold text-slate-400 uppercase mb-2 mt-6">Management</p>
-                    <button onclick="ui.switchAdminTab('teachers')" id="nav-teachers" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3">
-                        <i class="fas fa-chalkboard-teacher w-5 text-center"></i> Teachers
-                    </button>
-                    <button onclick="ui.switchAdminTab('classes')" id="nav-classes" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3">
-                        <i class="fas fa-layer-group w-5 text-center"></i> Classes
-                    </button>
-                    <button onclick="ui.switchAdminTab('subjects')" id="nav-subjects" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3">
-                        <i class="fas fa-book w-5 text-center"></i> Subjects
-                    </button>
-                    <button onclick="ui.switchAdminTab('notices')" id="nav-notices" class="nav-btn w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3">
-                        <i class="fas fa-bullhorn w-5 text-center"></i> Notices
-                    </button>
-                </div>
-            </nav>
-
-            <!-- Bottom Actions -->
-            <div class="border-t border-slate-100 dark:border-dark-border pt-4 mt-2">
-                <div class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-dark-bg rounded-xl mb-3">
-                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold">U</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs font-bold truncate dark:text-white" id="user-email-display">user@forte.com</p>
-                        <p class="text-[10px] text-slate-500 truncate capitalize" id="user-role-display">Role</p>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="ui.toggleTheme()" class="flex-1 py-2 rounded-lg border border-slate-200 dark:border-dark-border hover:bg-slate-50 dark:hover:bg-dark-bg text-slate-500 dark:text-slate-400 transition-colors">
-                        <i class="fas fa-moon dark:hidden"></i>
-                        <i class="fas fa-sun hidden dark:inline"></i>
-                    </button>
-                    <button onclick="auth.logout()" class="flex-1 py-2 rounded-lg border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors">
-                        <i class="fas fa-power-off"></i>
-                    </button>
-                </div>
+            <div class="flex items-center gap-2">
+                <button onclick="auth.logout()" class="text-slate-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors" title="Logout">
+                    <i class="fas fa-power-off"></i>
+                </button>
             </div>
-        </aside>
+        </header>
 
-        <!-- MAIN CONTENT -->
-        <main class="flex-1 flex flex-col relative overflow-hidden bg-slate-50/50 dark:bg-black">
+        <!-- Content Area -->
+        <div class="flex-1 overflow-hidden relative flex">
             
-            <!-- Mobile Header -->
-            <header class="md:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border-b border-slate-200 dark:border-dark-border sticky top-0 z-30">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white"><i class="fas fa-cube"></i></div>
-                    <span class="font-bold text-lg dark:text-white">Forte</span>
+            <!-- ADMIN SIDEBAR (Fix: Added overflow-y-auto) -->
+            <aside id="admin-sidebar" class="hidden w-64 bg-slate-900 text-slate-300 flex-col border-r border-slate-800 absolute md:relative z-40 h-full transition-transform transform md:translate-x-0 -translate-x-full overflow-y-auto">
+                <div class="p-4 border-b border-slate-800 mb-2 flex justify-between items-center md:hidden sticky top-0 bg-slate-900 z-10">
+                    <span class="font-bold text-white">Menu</span>
+                    <button onclick="ui.toggleSidebar()"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="ui.toggleTheme()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-dark-border flex items-center justify-center text-slate-600 dark:text-slate-300"><i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:inline"></i></button>
-                    <button onclick="auth.logout()" class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500"><i class="fas fa-power-off"></i></button>
+                <div class="p-4 space-y-1">
+                    <button onclick="ui.switchAdminTab('dashboard')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3 active-nav" id="nav-dashboard">
+                        <i class="fas fa-home w-5"></i> Dashboard
+                    </button>
+                    <button onclick="ui.switchAdminTab('teachers')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-teachers">
+                        <i class="fas fa-chalkboard-teacher w-5"></i> Teachers
+                    </button>
+                    <button onclick="ui.switchAdminTab('classes')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-classes">
+                        <i class="fas fa-layer-group w-5"></i> Classes
+                    </button>
+                    <button onclick="ui.switchAdminTab('subjects')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-subjects">
+                        <i class="fas fa-book w-5"></i> Subjects
+                    </button>
+                    <button onclick="ui.switchAdminTab('reports')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-reports">
+                        <i class="fas fa-file-csv w-5"></i> Reports
+                    </button>
                 </div>
-            </header>
+            </aside>
+            
+            <!-- Mobile Overlay -->
+            <div id="sidebar-overlay" onclick="ui.toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden transition-opacity"></div>
 
-            <div class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+            <!-- MAIN SCROLLABLE AREA -->
+            <main class="flex-1 overflow-y-auto bg-slate-50 p-3 md:p-6 w-full relative pb-24">
                 
-                <!-- ADMIN: DASHBOARD (Chart.js Integration) -->
-                <div id="view-admin-dashboard" class="view-section hidden space-y-6 max-w-7xl mx-auto">
-                    <div>
-                        <h2 class="text-2xl font-bold dark:text-white">Dashboard Overview</h2>
-                        <p class="text-slate-500 dark:text-slate-400">Welcome back to the command center.</p>
-                    </div>
-
-                    <!-- Stats Grid -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border group hover:border-primary-200 transition-all">
-                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Teachers</div>
-                            <div class="text-3xl font-extrabold text-slate-800 dark:text-white group-hover:text-primary-600 transition-colors" id="stat-t">0</div>
-                        </div>
-                        <div class="bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border group hover:border-purple-200 transition-all">
-                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Classes</div>
-                            <div class="text-3xl font-extrabold text-slate-800 dark:text-white group-hover:text-purple-600 transition-colors" id="stat-c">0</div>
-                        </div>
-                        <div class="bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border group hover:border-emerald-200 transition-all">
-                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total Students</div>
-                            <div class="text-3xl font-extrabold text-slate-800 dark:text-white group-hover:text-emerald-600 transition-colors" id="stat-stu">0</div>
-                        </div>
-                        <div class="bg-gradient-to-br from-primary-600 to-purple-700 p-5 rounded-2xl shadow-lg shadow-primary-500/20 text-white">
-                            <div class="text-primary-100 text-xs font-bold uppercase tracking-wider mb-2">Attendance Today</div>
-                            <div class="text-3xl font-extrabold" id="stat-att-today">--%</div>
-                        </div>
-                    </div>
-
-                    <!-- Charts Area -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <!-- Main Line Chart -->
-                        <div class="lg:col-span-2 bg-white dark:bg-dark-card p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-dark-border">
-                            <h3 class="font-bold text-lg mb-4 dark:text-white">Attendance Trends (Last 7 Days)</h3>
-                            <div class="relative h-64 w-full">
-                                <canvas id="chart-trends"></canvas>
-                            </div>
-                        </div>
-                        <!-- Doughnut Chart -->
-                        <div class="bg-white dark:bg-dark-card p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-dark-border flex flex-col items-center justify-center">
-                            <h3 class="font-bold text-lg mb-4 dark:text-white w-full text-left">Today's Status</h3>
-                            <div class="relative h-48 w-48">
-                                <canvas id="chart-status"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- ADMIN: NOTICES (New Feature) -->
-                <div id="view-admin-notices" class="view-section hidden max-w-4xl mx-auto space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-2xl font-bold dark:text-white">Digital Notice Board</h2>
-                        <button onclick="document.getElementById('modal-notice').classList.remove('hidden')" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20 transition-all">
-                            <i class="fas fa-plus mr-2"></i> Post Notice
+                <!-- TEACHER: CLASS VIEW WRAPPER -->
+                <div id="view-teacher-wrapper" class="hidden max-w-full mx-auto flex flex-col h-full">
+                    
+                    <!-- Class Tabs -->
+                    <div class="flex space-x-1 rounded-xl bg-slate-200 p-1 mb-4 shrink-0 max-w-3xl mx-auto w-full">
+                        <button onclick="teacher.switchView('mark')" id="btn-tab-mark" class="w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow">
+                            Mark Attendance
+                        </button>
+                        <button onclick="teacher.switchView('report')" id="btn-tab-report" class="w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-slate-600 hover:bg-white/[0.12] hover:text-slate-800">
+                            View Report
                         </button>
                     </div>
-                    <div id="admin-notice-list" class="space-y-4">
-                        <!-- Injected by JS -->
-                    </div>
-                </div>
 
-                <!-- ADMIN: TEACHERS / CLASSES / SUBJECTS (Standard CRUD) -->
-                <div id="view-admin-teachers" class="view-section hidden max-w-4xl mx-auto space-y-6">
-                     <h2 class="text-2xl font-bold dark:text-white">Manage Teachers</h2>
-                     <div class="bg-white dark:bg-dark-card p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <input type="text" id="new-t-name" placeholder="Full Name" class="input-modern">
-                            <input type="email" id="new-t-email" placeholder="Email Address" class="input-modern">
-                            <input type="password" id="new-t-pass" placeholder="Password (Min 6)" class="input-modern">
-                            <select id="new-t-class" class="input-modern bg-transparent"></select>
-                        </div>
-                        <button onclick="admin.addTeacher()" class="btn-primary w-full md:w-auto">Register Teacher</button>
-                     </div>
-                     <div id="list-teachers" class="grid gap-3"></div>
-                </div>
-
-                <div id="view-admin-classes" class="view-section hidden max-w-4xl mx-auto space-y-6">
-                     <h2 class="text-2xl font-bold dark:text-white">Manage Classes</h2>
-                     <div class="flex gap-3">
-                        <input type="text" id="new-c-name" placeholder="Class Name (e.g., ICS-A)" class="input-modern max-w-xs">
-                        <button onclick="admin.addClass()" class="btn-primary">Add Class</button>
-                     </div>
-                     <div id="list-classes" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
-                </div>
-
-                <div id="view-admin-subjects" class="view-section hidden max-w-4xl mx-auto space-y-6">
-                     <h2 class="text-2xl font-bold dark:text-white">Curriculum & Subjects</h2>
-                     <div class="bg-white dark:bg-dark-card p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border">
-                        <h3 class="font-bold text-sm text-slate-500 uppercase mb-3">Global Subjects</h3>
-                        <div class="flex gap-2 mb-4">
-                            <input type="text" id="new-s-global" placeholder="Subject Code (e.g. ENG)" class="input-modern">
-                            <button onclick="admin.addGlobalSubject()" class="btn-primary">Add</button>
-                        </div>
-                        <div id="list-s-global" class="flex flex-wrap gap-2"></div>
-                     </div>
-                     <div id="list-s-specific" class="space-y-4"></div>
-                </div>
-
-                <!-- TEACHER: MARK ATTENDANCE -->
-                <div id="view-teacher-wrapper" class="view-section hidden h-full flex flex-col">
-                    <!-- Teacher Header -->
-                    <div class="flex justify-between items-end mb-6 shrink-0">
-                        <div>
-                            <h2 class="text-2xl font-bold dark:text-white" id="header-title">Class View</h2>
-                            <p class="text-slate-500 text-sm" id="header-subtitle">Manage your students</p>
-                        </div>
-                        <div class="flex gap-2">
-                             <input type="date" id="att-date" class="input-modern py-2 text-sm w-auto" onchange="teacher.loadData()">
-                             <button onclick="teacher.save()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all flex items-center">
-                                <i class="fas fa-save mr-2"></i> Save
-                             </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Search & Filter Bar -->
-                    <div class="bg-white dark:bg-dark-card p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border mb-4 shrink-0 space-y-3">
-                         <div class="flex flex-wrap gap-2 justify-between items-center">
-                             <div class="relative flex-1 min-w-[200px]">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                <input type="text" id="att-search" placeholder="Search student..." class="input-modern pl-10" onkeyup="teacher.filter()">
-                             </div>
-                             <div class="flex gap-2">
-                                <button onclick="teacher.openAddStudentModal()" class="btn-secondary text-xs"><i class="fas fa-user-plus mr-1"></i> Add Student</button>
-                                <label class="btn-secondary text-xs cursor-pointer"><i class="fas fa-file-csv mr-1"></i> Import CSV <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)"></label>
-                             </div>
-                         </div>
-                         <div class="flex flex-col gap-1">
-                             <span class="text-[10px] uppercase font-bold text-slate-400">Active Subjects (Click to Toggle for Today):</span>
-                             <div class="flex flex-wrap gap-2 items-center" id="att-subjects-filter"></div>
-                         </div>
-                    </div>
-
-                    <!-- Attendance Table -->
-                    <div class="flex-1 bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border overflow-hidden flex flex-col relative">
-                        <div class="overflow-auto flex-1">
-                            <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead id="att-thead" class="bg-slate-50 dark:bg-dark-border/50 text-slate-500 dark:text-slate-400 uppercase text-[11px] font-bold sticky top-0 z-10 backdrop-blur-sm"></thead>
-                                <tbody id="att-list" class="divide-y divide-slate-100 dark:divide-dark-border text-slate-700 dark:text-slate-300"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                 <!-- TEACHER: REPORTS (Enhanced) -->
-                <div id="view-teacher-report" class="view-section hidden h-full flex flex-col">
-                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 shrink-0 gap-4">
-                        <div>
-                            <h2 class="text-2xl font-bold dark:text-white">Detailed Report</h2>
-                            <p class="text-slate-500 text-sm">Lecture-wise & Overall Performance</p>
-                        </div>
-                        <div class="flex flex-wrap gap-2 items-end">
-                            <div class="flex flex-col gap-1">
-                                <label class="text-[10px] uppercase font-bold text-slate-400">From</label>
-                                <input type="date" id="rep-start" class="input-modern py-1.5 text-xs w-32">
+                    <!-- TAB 1: MARK ATTENDANCE -->
+                    <div id="tab-content-mark" class="flex-1 flex flex-col overflow-hidden">
+                        <!-- Controls -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 z-20 space-y-3 shrink-0">
+                            <div class="flex flex-col md:flex-row justify-between gap-3">
+                                <div class="flex gap-2 items-center flex-wrap">
+                                    <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary/50 outline-none" onchange="teacher.loadData()">
+                                    <span id="student-count" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">0 Students</span>
+                                </div>
+                                <div class="flex gap-2 w-full md:w-auto">
+                                    <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                                        <i class="fas fa-user-plus"></i> Add
+                                    </button>
+                                    <label class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                        <i class="fas fa-file-upload"></i> Import CSV
+                                        <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)">
+                                    </label>
+                                    <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 ml-auto">
+                                        <i class="fas fa-save"></i> Save
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex flex-col gap-1">
-                                <label class="text-[10px] uppercase font-bold text-slate-400">To</label>
-                                <input type="date" id="rep-end" class="input-modern py-1.5 text-xs w-32">
+                            
+                            <!-- Search & Filter -->
+                            <div class="space-y-2">
+                                <div class="flex gap-2"><input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none" onkeyup="teacher.filter()"></div>
+                                <div class="bg-indigo-50 border border-indigo-100 p-2 rounded-lg">
+                                    <div class="text-[10px] uppercase font-bold text-indigo-400 mb-1">Select Subjects Taught Today (Tap to show/hide):</div>
+                                    <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center">
+                                        <!-- Injected by JS -->
+                                    </div>
+                                </div>
                             </div>
-                            <button onclick="teacher.loadReport()" class="btn-primary py-1.5 h-[34px] self-end">Generate</button>
-                            <button onclick="teacher.downloadCSV()" class="btn-secondary text-blue-600 border-blue-200 bg-blue-50 py-1.5 h-[34px] self-end" title="Export CSV"><i class="fas fa-download"></i></button>
+                        </div>
+
+                        <!-- LIST CONTAINER -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 overflow-hidden flex flex-col">
+                            <!-- DESKTOP TABLE (> md) -->
+                            <div class="hidden md:block overflow-x-auto h-full">
+                                <table class="w-full text-left text-sm whitespace-nowrap">
+                                    <thead id="att-thead-desktop" class="bg-slate-100 text-slate-600 uppercase text-xs font-bold border-b border-slate-200 sticky top-0 z-10"></thead>
+                                    <tbody id="att-list-desktop" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- MOBILE CARD LIST (< md) -->
+                            <div id="att-list-mobile" class="md:hidden h-full overflow-y-auto p-2 space-y-3">
+                                <!-- Cards injected here -->
+                            </div>
                         </div>
                     </div>
+
+                    <!-- TAB 2: CLASS REPORT -->
+                    <div id="tab-content-report" class="flex-1 flex flex-col hidden overflow-hidden">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 shrink-0 flex flex-col gap-3">
+                             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                                 <h2 class="font-bold text-slate-700">Class Report</h2>
+                                 <div class="flex bg-slate-100 p-1 rounded-lg">
+                                     <button onclick="teacher.toggleReportMode('monthly')" id="btn-rep-mode-monthly" class="px-3 py-1 text-xs font-bold rounded-md bg-white shadow text-primary transition-all">Monthly</button>
+                                     <button onclick="teacher.toggleReportMode('daily')" id="btn-rep-mode-daily" class="px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all">Daily</button>
+                                 </div>
+                             </div>
+                             
+                             <div id="rep-controls-monthly" class="flex justify-end gap-2">
+                                 <input type="month" id="teacher-rep-month" class="border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50" onchange="teacher.loadReport()">
+                                 <button onclick="teacher.loadReport()" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition"><i class="fas fa-file-alt mr-2"></i> Generate</button>
+                             </div>
                     
-                    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border overflow-hidden flex-1 flex flex-col">
-                         <div class="overflow-auto flex-1">
+                             <div id="rep-controls-daily" class="flex justify-end gap-2 hidden">
+                                 <input type="date" id="teacher-rep-date" class="border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50">
+                                 <button onclick="teacher.loadDailyReport()" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition"><i class="fas fa-list-alt mr-2"></i> Generate</button>
+                             </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 overflow-x-auto">
                             <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead id="rep-thead" class="bg-slate-50 dark:bg-dark-border/50 sticky top-0 z-10 text-xs uppercase font-bold text-slate-500 dark:text-slate-400"></thead>
-                                <tbody id="rep-list" class="divide-y divide-slate-100 dark:divide-dark-border text-slate-700 dark:text-slate-300">
-                                    <tr><td colspan="100%" class="p-8 text-center text-slate-400">Select a date range and click Generate.</td></tr>
+                                <thead id="rep-thead" class="bg-slate-50 text-slate-500 uppercase text-xs font-bold sticky top-0 z-10 border-b"></thead>
+                                <tbody id="teacher-rep-list" class="divide-y divide-slate-100">
+                                    <tr><td colspan="100%" class="p-6 text-center text-slate-400">Select report type and date</td></tr>
                                 </tbody>
                             </table>
-                         </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- TEACHER: NOTICES (Teacher View) -->
-                <div id="view-teacher-notices" class="view-section hidden max-w-4xl mx-auto space-y-6">
-                    <h2 class="text-2xl font-bold dark:text-white">Notice Board</h2>
-                    <div id="teacher-notice-list" class="space-y-4"></div>
+                <!-- ADMIN: DASHBOARD -->
+                <div id="view-admin-dashboard" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Teachers</div>
+                            <div class="text-3xl font-bold text-slate-800" id="stat-t">0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Classes</div>
+                            <div class="text-3xl font-bold text-slate-800" id="stat-c">0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Subjects</div>
+                            <div class="text-3xl font-bold text-slate-800" id="stat-s">0</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-700">Live Attendance Feed</h3>
+                            <div class="flex items-center gap-2">
+                                <input type="date" id="live-date" class="border rounded px-2 py-1 text-xs" onchange="admin.initLive()">
+                                <button onclick="admin.initLive()" class="text-primary hover:bg-indigo-50 p-1.5 rounded"><i class="fas fa-sync-alt"></i></button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
+                                    <tr>
+                                        <th class="px-6 py-3">Class</th>
+                                        <th class="px-6 py-3 text-center text-green-600">Present</th>
+                                        <th class="px-6 py-3 text-center text-red-600">Absent</th>
+                                        <th class="px-6 py-3 text-center text-yellow-600">Leave</th>
+                                        <th class="px-6 py-3 text-center text-orange-500">S-Leave</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="live-table-body">
+                                    <tr><td colspan="5" class="p-6 text-center text-slate-400">Loading live data...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
-            </div>
-        </main>
-    </div>
-
-    <!-- ===================== MODALS ===================== -->
-    
-    <!-- Student Profile & Stats Modal -->
-    <div id="modal-student-profile" class="fixed inset-0 z-[60] hidden">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="ui.closeProfile()"></div>
-        <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-dark-card shadow-2xl transform transition-transform translate-x-full duration-300 flex flex-col" id="profile-slideover">
-            
-            <div class="p-6 border-b border-slate-100 dark:border-dark-border flex justify-between items-center bg-slate-50/50 dark:bg-dark-bg/50">
-                <h3 class="font-bold text-lg dark:text-white">Student Profile</h3>
-                <button onclick="ui.closeProfile()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                <!-- Header Info -->
-                <div class="text-center">
-                    <div class="w-20 h-20 bg-gradient-to-br from-primary-400 to-purple-500 rounded-full mx-auto mb-3 flex items-center justify-center text-2xl font-bold text-white shadow-lg" id="prof-avatar">AB</div>
-                    <h2 class="text-xl font-bold dark:text-white" id="prof-name">Student Name</h2>
-                    <p class="text-slate-500 dark:text-slate-400 font-mono" id="prof-roll">Roll No: 123</p>
-                    <button onclick="teacher.editCurrentStudent()" class="mt-2 text-xs text-primary-600 hover:underline">Edit Details</button>
+                <!-- ADMIN: TEACHERS -->
+                <div id="view-admin-teachers" class="hidden space-y-4">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg mb-4">Register New Teacher</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <input type="text" id="new-t-name" placeholder="Full Name" class="border rounded-lg p-2.5 text-sm">
+                            <input type="email" id="new-t-email" placeholder="Email Address" class="border rounded-lg p-2.5 text-sm">
+                            <input type="password" id="new-t-pass" placeholder="Password (Min 6)" class="border rounded-lg p-2.5 text-sm">
+                            <select id="new-t-class" class="border rounded-lg p-2.5 text-sm bg-white"></select>
+                        </div>
+                        <button onclick="admin.addTeacher()" class="bg-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition">Create Teacher</button>
+                    </div>
+                    <div class="bg-indigo-50 border border-indigo-100 p-3 rounded text-xs text-indigo-700 mb-4">
+                        <i class="fas fa-info-circle mr-1"></i> To manage passwords, use the "Reset Pass" button to send an email, or manually set it in the <a href="https://console.firebase.google.com" target="_blank" class="underline font-bold">Firebase Console</a>.
+                    </div>
+                    <div id="list-teachers" class="space-y-3"></div>
                 </div>
 
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-2 gap-3">
-                     <div class="bg-slate-50 dark:bg-dark-bg p-4 rounded-xl text-center border border-slate-100 dark:border-dark-border">
-                        <div class="text-xs text-slate-500 uppercase font-bold">Attendance</div>
-                        <div class="text-2xl font-bold text-primary-600" id="prof-pct">--%</div>
-                     </div>
-                     <div class="bg-slate-50 dark:bg-dark-bg p-4 rounded-xl text-center border border-slate-100 dark:border-dark-border">
-                        <div class="text-xs text-slate-500 uppercase font-bold">Absents</div>
-                        <div class="text-2xl font-bold text-red-500" id="prof-abs">0</div>
-                     </div>
+                <!-- ADMIN: CLASSES -->
+                <div id="view-admin-classes" class="hidden space-y-4">
+                    <div class="flex gap-3 mb-4">
+                        <input type="text" id="new-c-name" placeholder="e.g. ICS-A" class="border rounded-lg p-2.5 text-sm uppercase w-full md:w-64">
+                        <button onclick="admin.addClass()" class="bg-green-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-green-700">Add Class</button>
+                    </div>
+                    <div class="text-xs text-slate-400 mb-2">Use arrows to arrange class order for Live Feed and Dropdowns.</div>
+                    <div id="list-classes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
 
-                <!-- Subject Breakdown -->
-                <div>
-                    <h4 class="font-bold text-sm mb-3 dark:text-white">Subject Performance</h4>
-                    <div id="prof-subjects" class="space-y-2"></div>
+                <!-- ADMIN: SUBJECTS -->
+                <div id="view-admin-subjects" class="hidden space-y-6">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-slate-700 mb-3 border-b pb-2">Global Subjects (All Classes)</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="new-s-global" placeholder="Subject Code (e.g. ENG)" class="border rounded-lg p-2 text-sm uppercase flex-1">
+                            <button onclick="admin.addGlobalSub()" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Add</button>
+                        </div>
+                        <div id="list-s-global" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    
+                    <div id="list-s-specific" class="space-y-4"></div>
                 </div>
-            </div>
-            
-             <!-- Delete Action -->
-             <div class="p-4 border-t border-slate-100 dark:border-dark-border bg-slate-50 dark:bg-dark-bg">
-                <button onclick="teacher.deleteStudent()" class="w-full py-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 font-bold transition-colors">Delete Student</button>
-             </div>
+
+                <!-- ADMIN: REPORTS -->
+                <div id="view-admin-reports" class="hidden space-y-4">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg mb-2">Reports Center</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div class="space-y-2">
+                                 <label class="text-xs font-bold uppercase text-slate-500">Monthly Class Report</label>
+                                 <select id="rep-month-cls" class="w-full border rounded p-2 text-sm mb-2"></select>
+                                 <input type="month" id="rep-month-date" class="w-full border rounded p-2 text-sm mb-2">
+                                 <button onclick="admin.dlMonthly()" class="w-full bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded text-sm font-bold hover:bg-blue-100">Download CSV</button>
+                             </div>
+                             <div class="space-y-2">
+                                 <label class="text-xs font-bold uppercase text-slate-500">Daily Summary (All Classes)</label>
+                                 <input type="date" id="rep-day-date" class="w-full border rounded p-2 text-sm mb-2">
+                                 <button onclick="admin.dlDaily()" class="w-full bg-green-50 text-green-600 border border-green-200 py-2 rounded text-sm font-bold hover:bg-green-100">Download Summary</button>
+                             </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg mb-2">Data Management</h3>
+                        <div class="flex gap-3">
+                             <button onclick="admin.backupData()" class="px-4 py-2 rounded border border-slate-300 text-slate-600 text-sm hover:bg-slate-50">Backup CSV</button>
+                             <label class="px-4 py-2 rounded bg-yellow-50 text-yellow-700 text-sm border border-yellow-200 cursor-pointer hover:bg-yellow-100">
+                                 Restore CSV <input type="file" class="hidden" onchange="admin.restoreData(this)">
+                             </label>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
-    <!-- Add/Edit Notice Modal -->
-    <div id="modal-notice" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="document.getElementById('modal-notice').classList.add('hidden')"></div>
-        <div class="relative bg-white dark:bg-dark-card w-full max-w-lg rounded-2xl shadow-2xl p-6 animate-slide-up">
-            <h3 class="font-bold text-lg mb-4 dark:text-white">Post New Notice</h3>
-            <div class="space-y-4">
-                <input type="text" id="note-title" placeholder="Notice Title (e.g., Staff Meeting)" class="input-modern w-full">
-                <textarea id="note-body" rows="4" placeholder="Type your message here..." class="input-modern w-full"></textarea>
-                <div class="flex gap-3 justify-end">
-                    <button onclick="document.getElementById('modal-notice').classList.add('hidden')" class="px-4 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-dark-border rounded-lg">Cancel</button>
-                    <button onclick="admin.postNotice()" class="btn-primary">Post Notice</button>
-                </div>
+    <!-- Student Edit Modal -->
+    <div id="modal-student" class="fixed inset-0 z-[70] bg-black/40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
+            <h3 class="font-bold text-lg mb-4" id="modal-student-title">Manage Student</h3>
+            <input type="text" id="mod-stu-roll" class="w-full border rounded p-2 mb-2" placeholder="Roll No">
+            <input type="text" id="mod-stu-name" class="w-full border rounded p-2 mb-4" placeholder="Name">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('modal-student').classList.add('hidden')" class="flex-1 py-2 border rounded text-slate-600">Cancel</button>
+                <button onclick="teacher.saveStudent()" class="flex-1 py-2 bg-primary text-white rounded font-bold">Save</button>
             </div>
-        </div>
-    </div>
-    
-    <!-- Edit Student Details Modal (Standard) -->
-    <div id="modal-student-edit" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="document.getElementById('modal-student-edit').classList.add('hidden')"></div>
-        <div class="relative bg-white dark:bg-dark-card w-full max-w-sm rounded-2xl shadow-2xl p-6">
-             <h3 class="font-bold text-lg mb-4 dark:text-white">Student Details</h3>
-             <input type="text" id="mod-stu-roll" class="input-modern w-full mb-3" placeholder="Roll No">
-             <input type="text" id="mod-stu-name" class="input-modern w-full mb-6" placeholder="Full Name">
-             <div class="flex gap-3">
-                 <button onclick="document.getElementById('modal-student-edit').classList.add('hidden')" class="flex-1 py-2 border dark:border-dark-border rounded-lg dark:text-white">Cancel</button>
-                 <button onclick="teacher.saveStudentDetails()" class="flex-1 btn-primary">Save</button>
-             </div>
+            <button id="btn-del-student" onclick="teacher.deleteStudent()" class="w-full mt-2 text-red-500 text-xs hover:underline hidden">Delete Student</button>
         </div>
     </div>
     
     <!-- Class Assignment Modal -->
-    <div id="modal-assign" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="document.getElementById('modal-assign').classList.add('hidden')"></div>
-        <div class="relative bg-white dark:bg-dark-card w-full max-w-sm rounded-2xl shadow-2xl p-6 flex flex-col max-h-[80vh]">
-            <h3 class="font-bold text-lg mb-2 dark:text-white">Assign Classes</h3>
-            <p class="text-xs text-slate-500 mb-4" id="assign-teacher-name">Select classes...</p>
-            <div id="assign-checkboxes" class="space-y-2 overflow-y-auto mb-4 border dark:border-dark-border p-2 rounded-xl flex-1 custom-scroll"></div>
-            <button onclick="admin.saveAssignments()" class="btn-primary w-full">Save Assignments</button>
+    <div id="modal-assign" class="fixed inset-0 z-[70] bg-black/40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm flex flex-col max-h-[80vh]">
+            <h3 class="font-bold text-lg mb-2">Assign Classes</h3>
+            <p class="text-xs text-slate-500 mb-4" id="assign-teacher-name">Select classes for ...</p>
+            <div id="assign-checkboxes" class="space-y-2 overflow-y-auto mb-4 border p-2 rounded flex-1"></div>
+            <div class="flex gap-2 shrink-0">
+                <button onclick="document.getElementById('modal-assign').classList.add('hidden')" class="flex-1 py-2 border rounded text-slate-600">Cancel</button>
+                <button onclick="admin.saveAssignments()" class="flex-1 py-2 bg-primary text-white rounded font-bold">Save</button>
+            </div>
         </div>
     </div>
 
@@ -481,16 +438,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, collection, addDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // --- TAILWIND UTILS ---
-        const commonInput = "bg-slate-50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-sm dark:text-white placeholder-slate-400";
-        const btnPrimary = "bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-95";
-        const btnSecondary = "bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border text-slate-700 dark:text-slate-300 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-dark-border transition-all";
-        
-        document.querySelectorAll('.input-modern').forEach(el => el.className = commonInput + " " + el.className);
-        document.querySelectorAll('.btn-primary').forEach(el => el.className = btnPrimary);
-        document.querySelectorAll('.btn-secondary').forEach(el => el.className = btnSecondary);
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // --- CONFIG ---
         const firebaseConfig = {
@@ -510,116 +458,94 @@
         // --- GLOBAL STATE ---
         window.state = {
             user: null,
+            role: null, 
             school: { classes: [], teachers: [], subjects: [], class_subjects: {} },
             currentClass: null,
             students: [],
             attendance: {}, 
             activeSubjects: {}, 
-            selectedStudentIdx: null,
+            attendanceMode: 'subject',
+            editingStudentIdx: null,
             editingTeacherIdx: null,
-            chartInstances: {},
-            reportData: null, // Store calculate report
-            listeners: []
+            unsubs: []
         };
 
-        // --- UI CONTROLLER ---
+        // --- UTILS ---
+        const toast = (msg) => {
+            const el = document.createElement('div');
+            el.className = "bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm transition-all transform translate-y-0 opacity-0";
+            el.innerText = msg;
+            document.getElementById('toast-container').appendChild(el);
+            requestAnimationFrame(() => el.classList.remove('opacity-0'));
+            setTimeout(() => { el.classList.add('opacity-0'); setTimeout(() => el.remove(), 300); }, 3000);
+        };
+
+        const saveConfig = async () => {
+            if(!auth.currentUser) return;
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school);
+            } catch(e) { console.error(e); toast("Save failed: " + e.message); }
+        };
+
+        const getLocalDate = () => {
+            const now = new Date();
+            return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        };
+
+        // --- UI CONTROLLERS ---
         window.ui = {
             setLoginTab: (role) => {
                 const isT = role === 'teacher';
-                const activeClass = "bg-primary-600 text-white shadow-lg shadow-primary-500/30";
-                const inactiveClass = "bg-white dark:bg-dark-card text-slate-500 dark:text-slate-400";
-                
-                document.getElementById('tab-login-teacher').className = `flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${isT ? activeClass : inactiveClass}`;
-                document.getElementById('tab-login-admin').className = `flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${!isT ? activeClass : inactiveClass}`;
-                
+                document.getElementById('tab-login-teacher').className = isT ? "flex-1 py-4 text-sm font-semibold text-primary border-b-2 border-primary bg-indigo-50/50 transition-colors" : "flex-1 py-4 text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors";
+                document.getElementById('tab-login-admin').className = !isT ? "flex-1 py-4 text-sm font-semibold text-primary border-b-2 border-primary bg-indigo-50/50 transition-colors" : "flex-1 py-4 text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors";
                 document.getElementById('form-teacher').classList.toggle('hidden', !isT);
                 document.getElementById('form-admin').classList.toggle('hidden', isT);
             },
-
-            toggleTheme: () => {
-                const html = document.documentElement;
-                if(html.classList.contains('dark')) {
-                    html.classList.remove('dark');
-                    localStorage.setItem('theme', 'light');
-                } else {
-                    html.classList.add('dark');
-                    localStorage.setItem('theme', 'dark');
-                }
-                admin.updateChartsTheme(); 
-            },
-
             switchAdminTab: (tab) => {
-                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                ['dashboard', 'teachers', 'classes', 'subjects', 'reports'].forEach(t => {
+                    document.getElementById(`view-admin-${t}`).classList.add('hidden');
+                    const nav = document.getElementById(`nav-${t}`);
+                    if(nav) nav.className = `w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3 text-slate-400`;
+                });
                 document.getElementById(`view-admin-${tab}`).classList.remove('hidden');
+                document.getElementById(`nav-${tab}`).className = `w-full text-left px-4 py-3 rounded-lg bg-primary text-white transition flex items-center gap-3 shadow-lg shadow-indigo-900/50`;
                 
-                // Active Nav State
-                document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('bg-primary-50', 'text-primary-600', 'dark:bg-primary-900/20', 'dark:text-primary-400'));
-                const nav = document.getElementById(`nav-${tab}`);
-                if(nav) nav.classList.add('bg-primary-50', 'text-primary-600', 'dark:bg-primary-900/20', 'dark:text-primary-400');
-
-                if(tab === 'dashboard') admin.loadDashboard();
-                if(tab === 'notices') admin.loadNotices();
+                if(tab === 'dashboard') window.admin.initLive();
             },
-            
-            toggleNotices: () => {
-                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-                document.getElementById('view-teacher-notices').classList.remove('hidden');
-                teacher.loadNotices();
-            },
-
-            openProfile: (idx) => {
-                window.state.selectedStudentIdx = idx;
-                const s = window.state.students[idx];
-                const slider = document.getElementById('profile-slideover');
-                const modal = document.getElementById('modal-student-profile');
-                
-                // Populate Data
-                document.getElementById('prof-name').innerText = s.name;
-                document.getElementById('prof-roll').innerText = s.rollNo;
-                document.getElementById('prof-avatar').innerText = s.name.substring(0,2).toUpperCase();
-                
-                // Calculate Stats Logic
-                teacher.calculateStudentStats(s.id);
-
-                modal.classList.remove('hidden');
-                setTimeout(() => slider.classList.remove('translate-x-full'), 10);
-            },
-
-            closeProfile: () => {
-                const slider = document.getElementById('profile-slideover');
-                slider.classList.add('translate-x-full');
-                setTimeout(() => document.getElementById('modal-student-profile').classList.add('hidden'), 300);
-            },
-            
-            toast: (msg) => {
-                const el = document.createElement('div');
-                el.className = "bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-3 rounded-xl shadow-2xl text-sm font-medium flex items-center gap-3 animate-fade-in";
-                el.innerHTML = `<i class="fas fa-info-circle text-primary-500"></i> ${msg}`;
-                document.getElementById('toast-container').appendChild(el);
-                setTimeout(() => el.remove(), 3000);
+            toggleSidebar: () => {
+                const sb = document.getElementById('admin-sidebar');
+                const overlay = document.getElementById('sidebar-overlay');
+                if (sb.classList.contains('-translate-x-full')) {
+                    sb.classList.remove('-translate-x-full');
+                    if(overlay) overlay.classList.remove('hidden');
+                } else {
+                    sb.classList.add('-translate-x-full');
+                    if(overlay) overlay.classList.add('hidden');
+                }
             }
         };
 
-        // --- AUTH & INIT ---
+        // --- AUTH LOGIC ---
         window.auth = {
             login: async (role) => {
-                const email = document.getElementById(`inp-${role}-email`).value;
-                const pass = document.getElementById(`inp-${role}-pass`).value;
-                if(!email || !pass) return ui.toast("Please fill all fields");
+                const email = document.getElementById(`inp-${role}-email`).value.trim();
+                const pass = document.getElementById(`inp-${role}-pass`).value.trim();
+                if(!email || !pass) return toast("Fill all fields");
+
                 try {
                     await signInWithEmailAndPassword(auth, email, pass);
-                    localStorage.setItem('role_attempt', role);
-                } catch(e) { ui.toast(e.message); }
+                    localStorage.setItem('fcs_role_attempt', role); 
+                } catch(e) {
+                    toast("Login Failed: " + e.code);
+                }
             },
-            
             enterClass: () => {
                 const cls = document.getElementById('inp-teacher-class').value;
                 if(!cls) return;
-                localStorage.setItem('current_class', cls);
+                localStorage.setItem('fcs_current_class', cls);
                 window.state.currentClass = cls;
-                teacher.init();
+                window.teacher.init();
             },
-            
             logout: async () => {
                 if(confirm("Logout?")) {
                     localStorage.clear();
@@ -627,881 +553,853 @@
                     location.reload();
                 }
             },
-            
             resetPass: async () => {
-                 const e = prompt("Enter admin email:");
-                 if(e) try { await sendPasswordResetEmail(auth, e); ui.toast("Reset email sent"); } catch(err){ alert(err.message); }
+                const email = document.getElementById('inp-admin-email').value;
+                if(email) {
+                    await sendPasswordResetEmail(auth, email);
+                    toast("Reset link sent!");
+                } else toast("Enter admin email first");
             }
         };
 
         // --- ADMIN CONTROLLER ---
         window.admin = {
             init: () => {
-                document.getElementById('view-login').classList.add('opacity-0', 'pointer-events-none');
-                setTimeout(() => document.getElementById('view-login').classList.add('hidden'), 500);
-                
                 document.getElementById('view-app').classList.remove('hidden');
-                setTimeout(() => document.getElementById('view-app').classList.remove('opacity-0'), 10);
+                document.getElementById('view-login').classList.add('hidden');
+                document.getElementById('admin-sidebar').classList.remove('hidden');
+                document.getElementById('admin-sidebar').classList.add('flex');
+                document.getElementById('header-title').innerText = "Admin Console";
+                document.getElementById('header-subtitle').innerText = "Management";
                 
-                document.getElementById('nav-admin-links').classList.remove('hidden');
-                
-                // Set User Info
-                document.getElementById('user-email-display').innerText = auth.currentUser.email;
-                document.getElementById('user-role-display').innerText = "Administrator";
-
                 ui.switchAdminTab('dashboard');
-                admin.renderLists();
+                admin.renderAll();
             },
-
-            loadDashboard: async () => {
-                // Populate simple counters
+            renderAll: () => {
                 const s = window.state.school;
-                document.getElementById('stat-t').innerText = s.teachers.length;
-                document.getElementById('stat-c').innerText = s.classes.length;
+                if(!s) return;
                 
-                let totalStudents = 0;
-                const classSnaps = await Promise.all(s.classes.map(c => getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', c))));
-                classSnaps.forEach(snap => { if(snap.exists()) totalStudents += (snap.data().students || []).length; });
-                document.getElementById('stat-stu').innerText = totalStudents;
+                // Stats
+                document.getElementById('stat-t').innerText = (s.teachers || []).length;
+                document.getElementById('stat-c').innerText = (s.classes || []).length;
+                document.getElementById('stat-s').innerText = (s.subjects || []).length;
 
-                // Today's Attendance Overview
-                const today = new Date().toISOString().split('T')[0];
-                let totalP = 0, totalA = 0, totalMarked = 0;
-                
-                const attSnaps = await Promise.all(s.classes.map(c => getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${c}_${today}`))));
-                
-                const last7Days = [];
-                for(let i=6; i>=0; i--) {
-                    const d = new Date(); d.setDate(d.getDate() - i);
-                    last7Days.push(d.toISOString().split('T')[0]);
-                }
-                
-                attSnaps.forEach(snap => {
-                    if(snap.exists()) {
-                        const recs = snap.data().records;
-                        Object.values(recs).forEach(stuRec => {
-                            const statuses = Object.values(stuRec);
-                            if(statuses.length > 0) {
-                                totalMarked++;
-                                if(statuses.some(st => st === 'P' || st === 'S/L')) totalP++;
-                                else if(statuses.every(st => st === 'A')) totalA++;
-                            }
-                        });
-                    }
-                });
-
-                const pct = totalMarked > 0 ? Math.round((totalP/totalMarked)*100) : 0;
-                document.getElementById('stat-att-today').innerText = pct + "%";
-
-                // Initialize Charts
-                admin.initCharts(totalP, totalA, last7Days);
-            },
-
-            initCharts: (p, a, labels) => {
-                const ctx1 = document.getElementById('chart-trends').getContext('2d');
-                const ctx2 = document.getElementById('chart-status').getContext('2d');
-                
-                if(window.state.chartInstances.trends) window.state.chartInstances.trends.destroy();
-                if(window.state.chartInstances.status) window.state.chartInstances.status.destroy();
-
-                const isDark = document.documentElement.classList.contains('dark');
-                const textColor = isDark ? '#e4e4e7' : '#475569';
-                const gridColor = isDark ? '#27272a' : '#f1f5f9';
-
-                // Trend Chart (Mock data for demo, replaced with real aggregation in prod)
-                const mockTrend = labels.map(() => Math.floor(Math.random() * (95 - 75) + 75)); 
-
-                window.state.chartInstances.trends = new Chart(ctx1, {
-                    type: 'line',
-                    data: {
-                        labels: labels.map(d => d.slice(5)), // MM-DD
-                        datasets: [{
-                            label: 'Attendance %',
-                            data: mockTrend,
-                            borderColor: '#6366f1',
-                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { grid: { color: gridColor }, ticks: { color: textColor }, min: 50, max: 100 },
-                            x: { grid: { display: false }, ticks: { color: textColor } }
-                        }
-                    }
-                });
-
-                // Status Chart
-                window.state.chartInstances.status = new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Present', 'Absent'],
-                        datasets: [{
-                            data: [p || 1, a || 0], 
-                            backgroundColor: ['#10b981', '#ef4444'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        cutout: '75%',
-                        plugins: { legend: { position: 'bottom', labels: { color: textColor } } }
-                    }
-                });
-            },
-
-            updateChartsTheme: () => {
-                if(document.getElementById('view-admin-dashboard').classList.contains('hidden')) return;
-                admin.loadDashboard(); // Reload to apply colors
-            },
-
-            // --- NOTICES ---
-            loadNotices: () => {
-                const list = document.getElementById('admin-notice-list');
-                list.innerHTML = '<div class="text-center text-slate-400">Loading...</div>';
-                
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'notices'), orderBy('date', 'desc'), limit(20));
-                onSnapshot(q, (snap) => {
-                    list.innerHTML = '';
-                    if(snap.empty) { list.innerHTML = '<div class="text-center text-slate-400 py-10">No notices posted yet.</div>'; return; }
-                    
-                    snap.forEach(doc => {
-                        const n = doc.data();
-                        const date = new Date(n.date).toLocaleDateString();
-                        list.innerHTML += `
-                            <div class="bg-white dark:bg-dark-card p-5 rounded-xl shadow-sm border border-slate-100 dark:border-dark-border flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-bold text-lg dark:text-white">${n.title}</h4>
-                                    <p class="text-slate-600 dark:text-slate-400 mt-1 text-sm whitespace-pre-wrap">${n.body}</p>
-                                    <div class="text-xs text-slate-400 mt-3 font-mono">Posted: ${date}</div>
-                                </div>
-                                <button onclick="admin.deleteNotice('${doc.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
-                            </div>
-                        `;
-                    });
-                });
-            },
-
-            postNotice: async () => {
-                const title = document.getElementById('note-title').value;
-                const body = document.getElementById('note-body').value;
-                if(!title || !body) return ui.toast("Fill all fields");
-                
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'notices'), {
-                    title, body, date: new Date().toISOString()
-                });
-                
-                document.getElementById('modal-notice').classList.add('hidden');
-                document.getElementById('note-title').value = '';
-                document.getElementById('note-body').value = '';
-                ui.toast("Notice Posted");
-            },
-
-            deleteNotice: async (id) => {
-                if(confirm("Delete this notice?")) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notices', id), {}, {delete:true}); 
-            },
-
-            // --- CRUD (Standard) ---
-            renderLists: () => {
-                const s = window.state.school;
-                
-                // Teachers
+                // Lists
                 const tList = document.getElementById('list-teachers');
                 tList.innerHTML = '';
-                s.teachers.forEach((t, i) => {
-                    tList.innerHTML += `
-                        <div class="bg-white dark:bg-dark-card p-4 rounded-xl shadow-sm border border-slate-100 dark:border-dark-border flex justify-between items-center">
+                (s.teachers || []).forEach((t, i) => {
+                    tList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200">
+                        <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h4 class="font-bold dark:text-white">${t.name}</h4>
-                                <p class="text-xs text-slate-500">${t.email}</p>
-                                <p class="text-[10px] text-primary-500 mt-1 font-bold">${(t.assignedClasses||[]).join(', ')}</p>
+                                <div class="font-bold text-slate-800">${t.name}</div>
+                                <div class="text-xs text-slate-500">${t.email}</div>
+                                <div class="text-[10px] text-indigo-500 mt-1 font-medium">
+                                    <i class="fas fa-layer-group mr-1"></i>
+                                    ${t.assignedClasses && t.assignedClasses.length > 0 ? t.assignedClasses.join(', ') : 'No classes assigned'}
+                                </div>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="admin.openAssign(${i})" class="btn-secondary text-xs px-2 py-1">Assign</button>
-                                <button onclick="admin.delTeacher(${i})" class="text-red-400 hover:bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button>
+                                <button onclick="admin.openAssignModal(${i})" class="text-blue-600 text-xs border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">Manage Classes</button>
+                                <button onclick="admin.resetTeacherPass('${t.email}')" class="text-orange-500 text-xs border border-orange-200 px-2 py-1 rounded hover:bg-orange-50">Reset Pass</button>
+                                <button onclick="admin.delTeacher(${i})" class="text-red-500 text-xs border border-red-200 px-2 py-1 rounded hover:bg-red-50"><i class="fas fa-trash"></i></button>
                             </div>
-                        </div>`;
+                        </div>
+                    </div>`;
                 });
 
-                // Classes
                 const cList = document.getElementById('list-classes');
                 cList.innerHTML = '';
-                s.classes.forEach((c, i) => {
-                    cList.innerHTML += `<div class="bg-white dark:bg-dark-card p-3 rounded-xl border border-slate-100 dark:border-dark-border flex justify-between items-center font-bold text-slate-700 dark:text-slate-300">
-                        ${c} <button onclick="admin.delClass(${i})" class="text-red-400 text-xs"><i class="fas fa-times"></i></button>
+                (s.classes || []).forEach((c, i) => {
+                    const isFirst = i === 0;
+                    const isLast = i === (s.classes.length - 1);
+                    
+                    cList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center group">
+                        <div class="flex items-center gap-2">
+                            <div class="flex flex-col gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
+                                <button onclick="admin.moveClass(${i}, -1)" class="text-[10px] hover:text-primary ${isFirst ? 'invisible' : ''}"><i class="fas fa-chevron-up"></i></button>
+                                <button onclick="admin.moveClass(${i}, 1)" class="text-[10px] hover:text-primary ${isLast ? 'invisible' : ''}"><i class="fas fa-chevron-down"></i></button>
+                            </div>
+                            <span class="font-bold">${c}</span>
+                        </div>
+                        <div class="flex gap-2">
+                             <button onclick="admin.viewClass('${c}')" class="text-xs bg-green-50 text-green-600 px-2 py-1 rounded">View</button>
+                             <button onclick="admin.delClass(${i})" class="text-xs text-red-500 px-2 py-1"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>`;
                 });
                 
-                // Global Subjects
+                // Dropdowns
+                const popSelect = (id) => {
+                     const el = document.getElementById(id);
+                     if(el) { el.innerHTML = ''; (s.classes || []).forEach(c => el.innerHTML += `<option>${c}</option>`); }
+                };
+                popSelect('rep-month-cls');
+                popSelect('report-class-select'); 
+                
+                const newTClass = document.getElementById('new-t-class');
+                if(newTClass) {
+                    newTClass.innerHTML = '<option value="">Primary Class (Optional)</option>';
+                    (s.classes || []).forEach(c => newTClass.innerHTML += `<option value="${c}">${c}</option>`);
+                }
+
+                // Subjects
                 const sgList = document.getElementById('list-s-global');
                 sgList.innerHTML = '';
-                s.subjects.forEach((sub, i) => {
-                     sgList.innerHTML += `<span class="bg-slate-100 dark:bg-dark-border px-3 py-1 rounded-full text-xs font-bold dark:text-white flex items-center gap-2">${sub} <i onclick="admin.delGlobalSub(${i})" class="fas fa-times cursor-pointer text-slate-400"></i></span>`;
+                (s.subjects || []).forEach((sub, i) => {
+                    sgList.innerHTML += `<span class="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs border border-purple-100 flex items-center">${sub} <button onclick="admin.delGlobalSub(${i})" class="ml-2 hover:text-red-500">×</button></span>`;
                 });
-
-                // Class Specific Subjects (NEW)
-                const ssList = document.getElementById('list-s-specific');
-                ssList.innerHTML = '<h3 class="font-bold text-sm text-slate-500 uppercase mt-4 mb-2">Class Specific Subjects</h3>';
                 
-                s.classes.forEach(cls => {
+                const ssList = document.getElementById('list-s-specific');
+                ssList.innerHTML = '';
+                (s.classes || []).forEach(cls => {
                     const specs = s.class_subjects?.[cls] || [];
-                    let pills = '';
-                    if(specs.length === 0) pills = '<span class="text-xs text-slate-400 italic">No additional subjects</span>';
-                    else {
-                        specs.forEach((sub, i) => {
-                            pills += `<span class="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1">${sub} <i onclick="admin.delSpecSub('${cls}', ${i})" class="fas fa-times cursor-pointer hover:text-red-500 ml-1"></i></span>`;
-                        });
-                    }
-
-                    ssList.innerHTML += `
-                        <div class="bg-white dark:bg-dark-card p-4 rounded-xl shadow-sm border border-slate-100 dark:border-dark-border flex flex-col gap-3">
-                            <div class="flex justify-between items-center">
-                                <h4 class="font-bold dark:text-white text-sm">${cls}</h4>
-                                <button onclick="admin.addSpecSub('${cls}')" class="text-xs btn-secondary py-1 px-2 h-auto"><i class="fas fa-plus mr-1"></i> Add</button>
-                            </div>
-                            <div class="flex flex-wrap gap-2">
-                                ${pills}
-                            </div>
-                        </div>
-                    `;
+                    let h = `<div class="bg-white p-3 rounded-lg border border-slate-200 mb-2"><div class="flex justify-between mb-2"><span class="font-bold text-sm">${cls}</span><button onclick="admin.addSpecSub('${cls}')" class="text-xs text-blue-600">+ Add</button></div><div class="flex flex-wrap gap-1">`;
+                    if(specs.length===0) h+= `<span class="text-xs text-slate-400">Default Only</span>`;
+                    specs.forEach((sub, i) => {
+                        h += `<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] border border-blue-100 flex items-center">${sub} <button onclick="admin.delSpecSub('${cls}', ${i})" class="ml-1 hover:text-red-500">×</button></span>`;
+                    });
+                    h += `</div></div>`;
+                    ssList.innerHTML += h;
                 });
             },
             
+            // Actions
             addTeacher: async () => {
                 const n = document.getElementById('new-t-name').value;
                 const e = document.getElementById('new-t-email').value;
                 const p = document.getElementById('new-t-pass').value;
                 const c = document.getElementById('new-t-class').value;
-                if(!n || !e || !p) return ui.toast("Fill all fields");
                 
-                window.state.school.teachers.push({name:n, email:e, assignedClasses: c?[c]:[]});
-                await admin.saveConfig();
-                ui.toast("Teacher Added");
-                admin.renderLists();
-            },
-            addClass: async () => {
-                 const n = document.getElementById('new-c-name').value.toUpperCase();
-                 if(n) { window.state.school.classes.push(n); await admin.saveConfig(); admin.renderLists(); }
-            },
-            addGlobalSubject: async () => {
-                 const s = document.getElementById('new-s-global').value.toUpperCase();
-                 if(s) { window.state.school.subjects.push(s); await admin.saveConfig(); admin.renderLists(); }
+                if(!n || !e || !p) return toast("Fill all");
+                
+                try {
+                    const tempApp = initializeApp(firebaseConfig, "Secondary");
+                    await createUserWithEmailAndPassword(getAuth(tempApp), e, p);
+                } catch(err) { return alert(err.message); }
+
+                window.state.school.teachers.push({name:n, email:e, assignedClasses: c ? [c]: []});
+                await saveConfig();
+                toast("Teacher Created");
+                admin.renderAll();
             },
             delTeacher: async (i) => {
-                if(confirm("Remove teacher?")) {
-                    window.state.school.teachers.splice(i, 1);
-                    await admin.saveConfig();
-                    admin.renderLists();
+                if(confirm("Delete?")) { window.state.school.teachers.splice(i,1); await saveConfig(); admin.renderAll(); }
+            },
+            resetTeacherPass: async (email) => {
+                if(confirm(`Send password reset email to ${email}?`)) {
+                    try {
+                        await sendPasswordResetEmail(auth, email);
+                        toast("Reset email sent!");
+                    } catch(e) { alert(e.message); }
                 }
             },
+            
+            openAssignModal: (idx) => {
+                window.state.editingTeacherIdx = idx;
+                const t = window.state.school.teachers[idx];
+                document.getElementById('assign-teacher-name').innerText = `Assign classes to: ${t.name}`;
+                
+                const container = document.getElementById('assign-checkboxes');
+                container.innerHTML = '';
+                
+                window.state.school.classes.forEach(cls => {
+                    const isChecked = (t.assignedClasses || []).includes(cls) ? 'checked' : '';
+                    container.innerHTML += `
+                        <label class="flex items-center p-2 hover:bg-slate-50 rounded cursor-pointer border border-transparent hover:border-slate-100">
+                            <input type="checkbox" class="class-assign-cb rounded text-primary focus:ring-primary mr-3" value="${cls}" ${isChecked}>
+                            <span class="text-sm text-slate-700 font-medium">${cls}</span>
+                        </label>
+                    `;
+                });
+                
+                document.getElementById('modal-assign').classList.remove('hidden');
+            },
+            
+            saveAssignments: async () => {
+                if (window.state.editingTeacherIdx === null) return;
+                
+                const checkboxes = document.querySelectorAll('.class-assign-cb:checked');
+                const selected = Array.from(checkboxes).map(cb => cb.value);
+                
+                window.state.school.teachers[window.state.editingTeacherIdx].assignedClasses = selected;
+                await saveConfig();
+                
+                document.getElementById('modal-assign').classList.add('hidden');
+                admin.renderAll();
+                toast("Classes Assigned!");
+            },
+            
+            addClass: async () => {
+                const n = document.getElementById('new-c-name').value.toUpperCase();
+                if(n && !window.state.school.classes.includes(n)) {
+                    window.state.school.classes.push(n);
+                    await saveConfig();
+                    document.getElementById('new-c-name').value = '';
+                    admin.renderAll();
+                }
+            },
+            
+            // NEW: Move Class Function
+            moveClass: async (index, direction) => {
+                const classes = window.state.school.classes;
+                const newIndex = index + direction;
+
+                if (newIndex >= 0 && newIndex < classes.length) {
+                    // Swap
+                    [classes[index], classes[newIndex]] = [classes[newIndex], classes[index]];
+                    await saveConfig();
+                    admin.renderAll();
+                }
+            },
+
             delClass: async (i) => {
-                if(confirm("Delete class?")) {
-                    window.state.school.classes.splice(i, 1);
-                    await admin.saveConfig();
-                    admin.renderLists();
+                if(confirm("Delete Class?")) { window.state.school.classes.splice(i,1); await saveConfig(); admin.renderAll(); }
+            },
+            addGlobalSub: async () => {
+                const s = document.getElementById('new-s-global').value.trim().toUpperCase();
+                if(!s) return;
+                
+                // Initialize if missing to prevent errors
+                if(!window.state.school.subjects) window.state.school.subjects = [];
+
+                if(!window.state.school.subjects.includes(s)) {
+                    window.state.school.subjects.push(s);
+                    await saveConfig();
+                    document.getElementById('new-s-global').value = '';
+                    admin.renderAll();
+                    toast("Subject Added");
+                } else {
+                    toast("Subject Exists");
                 }
             },
             delGlobalSub: async (i) => {
-                if(confirm("Delete subject?")) {
-                    window.state.school.subjects.splice(i, 1);
-                    await admin.saveConfig();
-                    admin.renderLists();
-                }
+                if(confirm("Delete?")) { window.state.school.subjects.splice(i,1); await saveConfig(); admin.renderAll(); }
             },
             addSpecSub: async (cls) => {
-                const s = prompt(`Add specific subject for ${cls} (e.g. ROBOTICS):`);
+                const s = prompt("Subject Code:");
                 if(s) {
-                    const up = s.toUpperCase().trim();
+                    const up = s.toUpperCase();
                     if(!window.state.school.class_subjects) window.state.school.class_subjects = {};
                     if(!window.state.school.class_subjects[cls]) window.state.school.class_subjects[cls] = [];
-                    
                     if(!window.state.school.class_subjects[cls].includes(up)) {
                         window.state.school.class_subjects[cls].push(up);
-                        await admin.saveConfig();
-                        admin.renderLists();
-                        ui.toast("Subject Added");
+                        await saveConfig();
+                        admin.renderAll();
                     }
                 }
             },
             delSpecSub: async (cls, i) => {
-                if(confirm("Remove this subject from " + cls + "?")) {
-                    window.state.school.class_subjects[cls].splice(i, 1);
-                    await admin.saveConfig();
-                    admin.renderLists();
-                }
+                window.state.school.class_subjects[cls].splice(i,1);
+                await saveConfig();
+                admin.renderAll();
             },
-            saveConfig: async () => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school),
             
-            openAssign: (i) => {
-                window.state.editingTeacherIdx = i;
-                const t = window.state.school.teachers[i];
-                document.getElementById('assign-teacher-name').innerText = t.name;
-                const div = document.getElementById('assign-checkboxes');
-                div.innerHTML = '';
-                window.state.school.classes.forEach(c => {
-                    const chk = (t.assignedClasses||[]).includes(c) ? 'checked' : '';
-                    div.innerHTML += `<label class="flex items-center p-2 hover:bg-slate-50 dark:hover:bg-dark-border rounded cursor-pointer"><input type="checkbox" value="${c}" class="mr-3 rounded text-primary-600 focus:ring-primary-500" ${chk}> <span class="text-sm dark:text-white">${c}</span></label>`;
+            initLive: () => {
+                const tbody = document.getElementById('live-table-body');
+                const d = document.getElementById('live-date').value || getLocalDate();
+                if (document.getElementById('live-date').value === '') document.getElementById('live-date').value = d;
+                
+                tbody.innerHTML = '';
+                window.state.unsubs.forEach(unsub => unsub());
+                window.state.unsubs = [];
+
+                window.state.school.classes.forEach(cls => {
+                    const rid = `live-${cls.replace(/\s+/g, '-')}`;
+                    const tr = document.createElement('tr');
+                    tr.id = rid;
+                    tr.className = "border-b border-slate-50";
+                    tr.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td class="text-center">-</td><td class="text-center">-</td><td class="text-center">-</td><td class="text-center">-</td>`;
+                    tbody.appendChild(tr);
+
+                    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`), snap => {
+                         const el = document.getElementById(rid);
+                         if(!el) return;
+                         
+                         if(snap.exists()) {
+                             const recs = snap.data().records;
+                             let p=0, a=0, l=0, sl=0;
+                             
+                             // Hierarchy Logic: P > SL > L > A
+                             Object.values(recs).forEach(r => {
+                                 const vals = Object.values(r);
+                                 if(vals.includes('P')) p++;
+                                 else if(vals.includes('S/L')) sl++;
+                                 else if(vals.includes('L')) l++;
+                                 else if(vals.includes('A')) a++;
+                             });
+                             
+                             el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td class="text-center text-green-600 font-bold">${p}</td><td class="text-center text-red-600 font-bold">${a}</td><td class="text-center text-yellow-600 font-bold">${l}</td><td class="text-center text-orange-500 font-bold">${sl}</td>`;
+                         } else {
+                             el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td colspan="4" class="text-center text-xs text-slate-400">Pending</td>`;
+                         }
+                    });
+                    
+                    window.state.unsubs.push(unsub);
                 });
-                document.getElementById('modal-assign').classList.remove('hidden');
             },
-            saveAssignments: async () => {
-                 const inputs = document.querySelectorAll('#assign-checkboxes input:checked');
-                 const classes = Array.from(inputs).map(i => i.value);
-                 window.state.school.teachers[window.state.editingTeacherIdx].assignedClasses = classes;
-                 await admin.saveConfig();
-                 document.getElementById('modal-assign').classList.add('hidden');
-                 admin.renderLists();
+            viewClass: (cls) => {
+                window.state.currentClass = cls;
+                document.getElementById('view-app').classList.remove('hidden');
+                document.getElementById('view-login').classList.add('hidden');
+                document.getElementById('admin-sidebar').classList.add('hidden'); 
+                
+                // Show Back Button
+                document.getElementById('btn-admin-back').classList.remove('hidden');
+                
+                document.getElementById('header-title').innerText = cls;
+                document.getElementById('header-subtitle').innerText = "Admin View Mode";
+                window.teacher.init(); 
+            },
+
+            // NEW: Exit Class View
+            exitClassView: () => {
+                document.getElementById('view-teacher-wrapper').classList.add('hidden');
+                document.getElementById('admin-sidebar').classList.remove('hidden');
+                document.getElementById('admin-sidebar').classList.add('flex');
+                
+                // Hide Back Button
+                document.getElementById('btn-admin-back').classList.add('hidden');
+
+                document.getElementById('header-title').innerText = "Admin Console";
+                document.getElementById('header-subtitle').innerText = "Management";
+                
+                // Reset state to ensure clean switch
+                window.state.currentClass = null;
+                // Unsubscribe from teacher listeners if any
+                if(window.state.dailyUnsub) { window.state.dailyUnsub(); window.state.dailyUnsub = null; }
+                
+                admin.init();
+            },
+            
+            // DOWNLOADS
+            dlMonthly: async () => {
+                const cls = document.getElementById('rep-month-cls').value;
+                const m = document.getElementById('rep-month-date').value;
+                if(!cls || !m) return alert("Select Class & Month");
+                
+                const [y, mm] = m.split('-');
+                const days = new Date(y, mm, 0).getDate();
+                
+                let csv = "Roll,Name,Total Lectures,Attended (P),Absents (A),Leaves (L),Short Leaves (S/L)\n";
+                
+                const cSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', cls));
+                const stus = cSnap.exists() ? cSnap.data().students : [];
+                
+                const atts = {};
+                await Promise.all(Array.from({length:days}, (_,i) => {
+                    const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                    return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`))
+                        .then(s => atts[d] = s.exists() ? s.data().records : {});
+                }));
+                
+                stus.forEach(s => {
+                    let totalP=0, totalA=0, totalL=0, totalSL=0, totalLec=0;
+                    
+                    for(let i=1; i<=days; i++) {
+                        const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                        const rec = atts[d]?.[s.id];
+                        if(rec) {
+                            Object.values(rec).forEach(val => {
+                                if(val !== '-') totalLec++; 
+                                if(val === 'P') totalP++;
+                                else if(val === 'A') totalA++;
+                                else if(val === 'L') totalL++;
+                                else if(val === 'S/L') totalSL++;
+                            });
+                        }
+                    }
+                    csv += `"${s.rollNo}","${s.name}",${totalLec},${totalP},${totalA},${totalL},${totalSL}\n`;
+                });
+                
+                const b = new Blob([csv], {type:'text/csv'});
+                const u = URL.createObjectURL(b);
+                const a = document.createElement('a'); a.href=u; a.download=`${cls}_${m}_Report.csv`; a.click();
+            },
+            
+            dlDaily: async () => {
+                alert("Generating...");
+            },
+            
+            backupData: async () => {
+                 const data = JSON.stringify(window.state.school);
+                 const b = new Blob([data], {type:'json'});
+                 const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='school_backup.json'; a.click();
+            },
+            restoreData: (input) => {
+                const f = input.files[0];
+                if(!f) return;
+                const r = new FileReader();
+                r.onload = async (e) => {
+                    const d = JSON.parse(e.target.result);
+                    window.state.school = d;
+                    await saveConfig();
+                    alert("Restored!");
+                    location.reload();
+                };
+                r.readAsText(f);
             }
+
         };
 
         // --- TEACHER CONTROLLER ---
         window.teacher = {
             init: () => {
+                document.getElementById('view-app').classList.remove('hidden');
                 document.getElementById('view-login').classList.add('hidden');
-                document.getElementById('view-app').classList.remove('hidden', 'opacity-0');
-                document.getElementById('nav-teacher-links').classList.remove('hidden');
+                document.getElementById('view-teacher-wrapper').classList.remove('hidden');
                 
-                document.getElementById('user-email-display').innerText = window.state.currentClass;
-                document.getElementById('user-role-display').innerText = "Teacher Mode";
+                // Header
                 document.getElementById('header-title').innerText = window.state.currentClass;
+                
+                // Setup Date
+                const d = getLocalDate();
+                document.getElementById('att-date').value = d;
+                
+                // Setup Report Date Defaults
+                const now = new Date();
+                const mStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                document.getElementById('teacher-rep-month').value = mStr;
+                document.getElementById('teacher-rep-date').value = d;
 
-                // Set today
-                document.getElementById('att-date').value = new Date().toISOString().split('T')[0];
-
-                // Setup Date Range Defaults for Report
-                const today = new Date();
-                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                document.getElementById('rep-start').value = firstDay.toISOString().split('T')[0];
-                document.getElementById('rep-end').value = today.toISOString().split('T')[0];
-
-                // Load Students
+                // Listen to class data
                 onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), snap => {
                     window.state.students = snap.exists() ? (snap.data().students || []) : [];
-                    teacher.renderView();
+                    teacher.renderList();
+                    if(!document.getElementById('tab-content-report').classList.contains('hidden')) teacher.loadReport();
                 });
                 
-                // Check Notices
-                teacher.checkNotices();
-                
+                // Initialize default tab
                 teacher.switchView('mark');
                 teacher.loadData();
             },
-
-            switchView: (v) => {
-                document.getElementById('view-teacher-wrapper').classList.toggle('hidden', v !== 'mark');
-                document.getElementById('view-teacher-report').classList.toggle('hidden', v !== 'report');
-                document.getElementById('view-teacher-notices').classList.add('hidden');
-
-                // Nav Active State
-                ['mark', 'report'].forEach(id => {
-                    document.getElementById(`nav-t-${id}`).classList.toggle('bg-primary-50', id===v);
-                    document.getElementById(`nav-t-${id}`).classList.toggle('text-primary-600', id===v);
-                });
+            
+            switchView: (view) => {
+                document.getElementById('tab-content-mark').classList.toggle('hidden', view !== 'mark');
+                document.getElementById('tab-content-report').classList.toggle('hidden', view !== 'report');
+                
+                document.getElementById('btn-tab-mark').className = view === 'mark' ? "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow" : "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-slate-600 hover:bg-white/[0.12] hover:text-slate-800";
+                document.getElementById('btn-tab-report').className = view === 'report' ? "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow" : "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-slate-600 hover:bg-white/[0.12] hover:text-slate-800";
+                
+                if (view === 'report') teacher.loadReport();
+            },
+            
+            toggleReportMode: (mode) => {
+                document.getElementById('rep-controls-monthly').classList.toggle('hidden', mode !== 'monthly');
+                document.getElementById('rep-controls-daily').classList.toggle('hidden', mode !== 'daily');
+                document.getElementById('btn-rep-mode-monthly').className = mode === 'monthly' ? "px-3 py-1 text-xs font-bold rounded-md bg-white shadow text-primary transition-all" : "px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
+                document.getElementById('btn-rep-mode-daily').className = mode === 'daily' ? "px-3 py-1 text-xs font-bold rounded-md bg-white shadow text-primary transition-all" : "px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition-all";
+                
+                // Clear table
+                document.getElementById('teacher-rep-list').innerHTML = '';
+                document.getElementById('rep-thead').innerHTML = '';
             },
 
             loadData: () => {
-                 const d = document.getElementById('att-date').value;
-                 
-                 // Render Subject Pills
-                 const glob = window.state.school.subjects || [];
-                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                 const subs = Array.from(new Set([...glob, ...spec]));
-                 
-                 const filterDiv = document.getElementById('att-subjects-filter');
-                 filterDiv.innerHTML = '';
-                 
-                 if (subs.length === 0) {
-                     filterDiv.innerHTML = `<span class="text-xs text-red-500 font-bold bg-red-50 p-2 rounded">No subjects found. Please add subjects in Admin > Subjects.</span>`;
-                 }
-
-                 subs.forEach(s => {
-                     if(window.state.activeSubjects[s] === undefined) window.state.activeSubjects[s] = true;
-                     const active = window.state.activeSubjects[s];
-                     // Updated colors for better visibility
-                     const cls = active ? "bg-primary-600 text-white shadow-md shadow-primary-500/20" : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300 border border-transparent";
-                     filterDiv.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-lg text-xs font-bold transition-all ${cls}">${s}</button>`;
-                 });
-
-                 // Listen for attendance
-                 if(window.state.attListener) window.state.attListener();
-                 window.state.attListener = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`), snap => {
-                     window.state.attendance = snap.exists() ? snap.data().records : {};
-                     teacher.renderView();
-                 });
+                const d = document.getElementById('att-date').value;
+                // Determine subjects
+                const glob = window.state.school.subjects || [];
+                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
+                const subs = Array.from(new Set([...glob, ...spec]));
+                
+                const filter = document.getElementById('att-subjects-filter');
+                filter.innerHTML = '';
+                subs.forEach(s => {
+                    if(window.state.activeSubjects[s] === undefined) window.state.activeSubjects[s] = true;
+                    const active = window.state.activeSubjects[s];
+                    // Update button styling for toggle
+                    const activeClass = "bg-indigo-100 text-indigo-700 border-indigo-200 filter-btn-active";
+                    const inactiveClass = "bg-slate-100 text-slate-400 border-slate-200 filter-btn-inactive";
+                    
+                    filter.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${active ? activeClass : inactiveClass}">${s}</button>`;
+                });
+                
+                if(window.state.dailyUnsub) window.state.dailyUnsub();
+                window.state.dailyUnsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`), snap => {
+                    window.state.attendance = snap.exists() ? snap.data().records : {};
+                    teacher.renderList();
+                });
+            },
+            
+            toggleSub: (s) => {
+                window.state.activeSubjects[s] = !window.state.activeSubjects[s];
+                teacher.loadData(); // Re-render pills
+            },
+            
+            setRowStatus: (sid, status) => {
+                if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
+                const glob = window.state.school.subjects || [];
+                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
+                const subs = Array.from(new Set([...glob, ...spec]));
+                subs.forEach(sub => {
+                    if (window.state.activeSubjects[sub] !== false) window.state.attendance[sid][sub] = status;
+                });
+                teacher.renderList();
             },
 
-            toggleSub: (s) => { window.state.activeSubjects[s] = !window.state.activeSubjects[s]; teacher.loadData(); },
-
-            renderView: () => {
+            renderList: () => {
+                // DESKTOP TABLE RENDER
+                const deskList = document.getElementById('att-list-desktop');
+                const deskHead = document.getElementById('att-thead-desktop');
+                
+                // MOBILE LIST RENDER
+                const mobileList = document.getElementById('att-list-mobile');
+                
                 const search = document.getElementById('att-search').value.toLowerCase();
-                const tbody = document.getElementById('att-list');
-                const thead = document.getElementById('att-thead');
+                document.getElementById('student-count').innerText = `${window.state.students.length} Students`;
                 
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec])).filter(s => window.state.activeSubjects[s]);
+                const subs = Array.from(new Set([...glob, ...spec]));
+                const activeSubs = subs.filter(s => window.state.activeSubjects[s] !== false);
+                
+                // --- DESKTOP HEADER ---
+                let headerHTML = `<tr><th class="px-4 py-3 w-16 text-center bg-slate-100 border-b border-r border-slate-200">Roll</th><th class="px-4 py-3 w-40 bg-slate-100 border-b border-r border-slate-200">Name <span class="text-[10px] text-slate-400 font-normal">(Actions)</span></th>`;
+                activeSubs.forEach(sub => { 
+                    headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200">${sub}</th>`; 
+                });
+                headerHTML += `</tr>`;
+                deskHead.innerHTML = headerHTML;
+                
+                deskList.innerHTML = '';
+                mobileList.innerHTML = '';
+                
+                const getBtnClass = (val, current) => {
+                    let base = "flex-1 py-1.5 text-[10px] font-bold border-r last:border-r-0 border-slate-200 transition-colors first:rounded-l last:rounded-r";
+                    if (val !== current) return base + " text-slate-400 bg-white hover:bg-slate-50";
+                    if (val === 'P') return base + " bg-green-500 text-white";
+                    if (val === 'A') return base + " bg-red-500 text-white";
+                    if (val === 'L') return base + " bg-yellow-500 text-white";
+                    if (val === 'S/L') return base + " bg-orange-500 text-white";
+                };
 
-                if (subs.length === 0) {
-                    thead.innerHTML = `<tr><th class="p-4 text-center text-slate-400">No Subjects Configured</th></tr>`;
-                    tbody.innerHTML = `<tr><td class="p-8 text-center text-slate-500">Please go to Admin Dashboard to add subjects.</td></tr>`;
-                    return;
-                }
-
-                // Header
-                let h = `<tr><th class="px-4 py-3 sticky-col-1 bg-slate-50 dark:bg-dark-card border-b border-r dark:border-dark-border">Roll</th>
-                         <th class="px-4 py-3 sticky-col-2 bg-slate-50 dark:bg-dark-card border-b border-r dark:border-dark-border min-w-[150px]">Name</th>
-                         <th class="px-2 py-3 text-center border-b dark:border-dark-border bg-slate-50 dark:bg-dark-card min-w-[100px]">Quick Mark</th>`; // New Column Header
-                subs.forEach(s => h += `<th class="px-2 py-3 text-center border-b dark:border-dark-border min-w-[120px]">${s}</th>`);
-                h += `</tr>`;
-                thead.innerHTML = h;
-
-                // Body
-                tbody.innerHTML = '';
                 window.state.students
                     .filter(s => s.name.toLowerCase().includes(search) || s.rollNo.includes(search))
                     .sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true}))
                     .forEach((s, idx) => {
-                         const rec = window.state.attendance[s.id] || {};
-                         let r = `<tr class="hover:bg-slate-50 dark:hover:bg-dark-border/30 transition-colors group border-b border-slate-50 dark:border-dark-border">
-                            <td class="px-4 py-3 font-mono font-bold text-slate-500 sticky-col-1 bg-white dark:bg-dark-card group-hover:bg-slate-50 dark:group-hover:bg-dark-border/30 border-r dark:border-dark-border shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">${s.rollNo}</td>
-                            <td class="px-4 py-3 font-medium sticky-col-2 bg-white dark:bg-dark-card group-hover:bg-slate-50 dark:group-hover:bg-dark-border/30 border-r dark:border-dark-border shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                                <button onclick="ui.openProfile(${idx})" class="text-left w-full hover:text-primary-600 dark:text-white transition-colors flex items-center justify-between">
-                                    ${s.name}
-                                    <i class="fas fa-info-circle opacity-0 group-hover:opacity-100 text-slate-300 text-xs"></i>
-                                </button>
-                            </td>
-                            <!-- New Quick Mark Column -->
-                            <td class="px-2 py-3 text-center bg-white dark:bg-dark-card border-b border-slate-50 dark:border-dark-border">
-                                <div class="flex justify-center gap-1">
-                                    <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="w-6 h-6 rounded bg-emerald-100 text-emerald-600 hover:bg-emerald-200 text-[10px] font-bold transition-colors" title="Mark All Present">P</button>
-                                    <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="w-6 h-6 rounded bg-red-100 text-red-600 hover:bg-red-200 text-[10px] font-bold transition-colors" title="Mark All Absent">A</button>
-                                    <button onclick="teacher.setRowStatus('${s.id}', 'L')" class="w-6 h-6 rounded bg-yellow-100 text-yellow-600 hover:bg-yellow-200 text-[10px] font-bold transition-colors" title="Mark All Leave">L</button>
+                        const rec = window.state.attendance[s.id] || {};
+                        
+                        // --- DESKTOP ROW ---
+                        let dRow = `<tr class="hover:bg-slate-50 transition-colors border-b border-slate-50">
+                            <td class="px-4 py-3 font-mono text-slate-600 font-bold text-center bg-white border-r border-slate-100 shadow-sm">${s.rollNo}</td>
+                            <td class="px-4 py-3 font-medium text-slate-800 bg-white border-r border-slate-100 shadow-sm whitespace-nowrap">
+                                <div class="flex justify-between items-center">
+                                    <span class="cursor-pointer" onclick="teacher.editStudent(${idx})">${s.name}</span>
+                                    <div class="flex gap-1 ml-2">
+                                        <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded border border-green-200 hover:bg-green-100" title="All P">P</button>
+                                        <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-200 hover:bg-red-100" title="All A">A</button>
+                                        <button onclick="teacher.setRowStatus('${s.id}', 'L')" class="text-[10px] bg-yellow-50 text-yellow-600 px-1.5 py-0.5 rounded border border-yellow-200 hover:bg-yellow-100" title="All L">L</button>
+                                    </div>
                                 </div>
                             </td>`;
                             
-                         subs.forEach(sub => {
-                             const st = rec[sub] || 'P'; // Default P
-                             const btnBase = "w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold transition-all border ";
-                             const getCls = (key) => {
-                                 if (st !== key) return "bg-transparent border-transparent text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-border";
-                                 if (key === 'P') return "bg-emerald-100 border-emerald-200 text-emerald-600";
-                                 if (key === 'A') return "bg-red-100 border-red-200 text-red-600";
-                                 if (key === 'L') return "bg-yellow-100 border-yellow-200 text-yellow-600";
-                                 return "bg-orange-100 border-orange-200 text-orange-600";
-                             };
-                             
-                             r += `<td class="px-2 py-2 text-center">
-                                <div class="flex justify-center gap-1 bg-slate-50 dark:bg-dark-bg p-1 rounded-lg border border-slate-100 dark:border-dark-border">
-                                    <button onclick="teacher.setStatus('${s.id}','${sub}','P')" class="${btnBase} ${getCls('P')}">P</button>
-                                    <button onclick="teacher.setStatus('${s.id}','${sub}','A')" class="${btnBase} ${getCls('A')}">A</button>
-                                    <button onclick="teacher.setStatus('${s.id}','${sub}','L')" class="${btnBase} ${getCls('L')}">L</button>
-                                    <button onclick="teacher.setStatus('${s.id}','${sub}','S/L')" class="${btnBase} ${getCls('S/L')}">S</button>
+                        // --- MOBILE CARD ---
+                        let mCard = `<div class="bg-white rounded-lg shadow-sm border border-slate-200 p-3">
+                            <div class="flex justify-between items-center mb-2 border-b border-slate-50 pb-2">
+                                <div><span class="font-bold text-slate-800">${s.name}</span> <span class="text-xs text-slate-400 font-mono">(${s.rollNo})</span></div>
+                                <div class="flex gap-1">
+                                    <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100">All P</button>
+                                    <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">All A</button>
+                                    <button onclick="teacher.setRowStatus('${s.id}', 'L')" class="text-[10px] font-bold text-yellow-600 bg-yellow-50 px-2 py-1 rounded border border-yellow-100">All L</button>
+                                    <i class="fas fa-ellipsis-v text-slate-300 ml-2 px-2" onclick="teacher.editStudent(${idx})"></i>
                                 </div>
-                             </td>`;
-                         });
-                         r += `</tr>`;
-                         tbody.innerHTML += r;
+                            </div>
+                            <div class="space-y-2">`;
+
+                        activeSubs.forEach(sub => {
+                            const status = rec[sub] || 'P'; // Default
+                            
+                            // Desktop Cell
+                            dRow += `<td class="px-4 py-2 text-center">
+                                <div class="flex border border-slate-200 rounded w-full max-w-[180px] mx-auto shadow-sm">
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
+                                </div>
+                            </td>`;
+                            
+                            // Mobile Row inside Card
+                            mCard += `
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-500 w-16">${sub}</span>
+                                <div class="flex border border-slate-200 rounded overflow-hidden flex-1 max-w-[200px]">
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
+                                </div>
+                            </div>`;
+                        });
+                        
+                        dRow += `</tr>`;
+                        mCard += `</div></div>`;
+                        
+                        deskList.innerHTML += dRow;
+                        mobileList.innerHTML += mCard;
                     });
             },
-
-            // New function to handle bulk marking for a specific student row
-            setRowStatus: (sid, st) => {
+            
+            setStatus: (sid, key, status) => {
                 if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec])); 
-                
-                subs.forEach(sub => {
-                    // Only mark if the subject is currently "active" (toggled on)
-                    if(window.state.activeSubjects[sub] !== false) {
-                        window.state.attendance[sid][sub] = st;
-                    }
-                });
-                teacher.renderView();
+                window.state.attendance[sid][key] = status;
+                teacher.renderList();
             },
-
-            setStatus: (sid, sub, st) => {
-                if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
-                window.state.attendance[sid][sub] = st;
-                teacher.renderView(); 
-            },
-
+            
             save: async () => {
                 const d = document.getElementById('att-date').value;
-                const final = {};
-                
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`);
+                const finalData = JSON.parse(JSON.stringify(window.state.attendance)); 
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
-
+                
                 window.state.students.forEach(s => {
-                    final[s.id] = {};
+                    if(!finalData[s.id]) finalData[s.id] = {};
                     subs.forEach(sub => {
-                        const existing = window.state.attendance[s.id]?.[sub];
-                        // If subject is active, save status. If inactive, save '-' (Not Taught)
-                        if (window.state.activeSubjects[sub]) final[s.id][sub] = existing || 'P';
-                        else final[s.id][sub] = '-';
-                    });
-                });
-                
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`), {date:d, records:final});
-                ui.toast("Saved Successfully");
-            },
-
-            // --- REPORT GENERATION ---
-            loadReport: async () => {
-                const start = document.getElementById('rep-start').value;
-                const end = document.getElementById('rep-end').value;
-                if(!start || !end) return ui.toast("Select date range");
-                
-                const tbody = document.getElementById('rep-list');
-                const thead = document.getElementById('rep-thead');
-                tbody.innerHTML = '<tr><td colspan="100%" class="p-8 text-center text-slate-400">Processing Data...</td></tr>';
-                
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec]));
-
-                // Generate dates
-                const sDate = new Date(start);
-                const eDate = new Date(end);
-                const dates = [];
-                for(let dt=new Date(sDate); dt<=eDate; dt.setDate(dt.getDate()+1)) {
-                    dates.push(dt.toISOString().split('T')[0]);
-                }
-                
-                // Fetch Data
-                const snaps = await Promise.all(dates.map(d => getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`))));
-                const attData = {};
-                snaps.forEach((snap, i) => {
-                    if(snap.exists()) attData[dates[i]] = snap.data().records;
-                });
-
-                // Calculate Stats
-                // Structure: { studentId: { overall: {p, a, l, sl, total}, subjects: { subName: {p, total} } } }
-                const report = {};
-                
-                window.state.students.forEach(stu => {
-                    report[stu.id] = { overall: {p:0, a:0, l:0, sl:0, total:0}, subjects: {} };
-                    subs.forEach(sub => report[stu.id].subjects[sub] = {p:0, total:0});
-                    
-                    dates.forEach(d => {
-                        const rec = attData[d]?.[stu.id];
-                        if(rec) {
-                            subs.forEach(sub => {
-                                const st = rec[sub];
-                                if(st && st !== '-') {
-                                    report[stu.id].subjects[sub].total++;
-                                    report[stu.id].overall.total++;
-                                    
-                                    if(st === 'P') { report[stu.id].subjects[sub].p++; report[stu.id].overall.p++; }
-                                    else if(st === 'A') report[stu.id].overall.a++;
-                                    else if(st === 'L') report[stu.id].overall.l++;
-                                    else if(st === 'S/L') { report[stu.id].subjects[sub].p++; report[stu.id].overall.sl++; } // SL counts as Present for Lecture stats usually, or half. Counting as P for simplicity here.
-                                }
-                            });
+                        if(window.state.activeSubjects[sub] !== false) {
+                            if(!finalData[s.id][sub]) finalData[s.id][sub] = 'P';
+                        } else {
+                            finalData[s.id][sub] = '-';
                         }
                     });
                 });
                 
-                window.state.reportData = { report, subs, start, end }; // Store for CSV
+                await setDoc(ref, { date: d, records: finalData }, {merge: true});
+                toast("Attendance Saved!");
+            },
+            
+            filter: () => teacher.renderList(),
+            
+            // --- CLASS REPORT LOGIC ---
+            loadReport: async () => {
+                const tbody = document.getElementById('teacher-rep-list');
+                const thead = document.getElementById('rep-thead');
+                const m = document.getElementById('teacher-rep-month').value;
+                const cls = window.state.currentClass;
+                
+                if(!m) return;
+                tbody.innerHTML = '<tr><td colspan="100%" class="p-6 text-center text-slate-400">Calculating...</td></tr>';
+                
+                const [y, mm] = m.split('-');
+                const days = new Date(y, mm, 0).getDate();
+                const atts = {};
+                
+                // 1. Fetch data
+                await Promise.all(Array.from({length:days}, (_,i) => {
+                    const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                    return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`))
+                        .then(s => atts[d] = s.exists() ? s.data().records : {});
+                }));
+                
+                // 2. Build Header with Subjects
+                const glob = window.state.school.subjects || [];
+                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
+                const subs = Array.from(new Set([...glob, ...spec]));
+                
+                let headerHTML = `<tr>
+                                    <th class="px-4 py-3 w-20 sticky-col-1 bg-slate-100 border-b border-r border-slate-200">Roll</th>
+                                    <th class="px-4 py-3 sticky-col-2 bg-slate-100 border-b border-r border-slate-200">Name</th>`;
+                
+                subs.forEach(sub => {
+                    headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 min-w-[120px]">${sub}</th>`;
+                });
+                headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 bg-slate-100">Total %</th></tr>`;
+                thead.innerHTML = headerHTML;
+                
+                tbody.innerHTML = '';
+                
+                window.state.students.forEach(s => {
+                    let totalP = 0, totalLec = 0;
+                    let rowHTML = `<tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-mono font-bold text-slate-600 sticky-col-1 bg-white border-r border-slate-100">${s.rollNo}</td>
+                        <td class="px-4 py-3 font-medium text-slate-800 sticky-col-2 bg-white border-r border-slate-100">${s.name}</td>`;
+                        
+                    subs.forEach(sub => {
+                        let subP = 0, subTotal = 0;
+                        for(let i=1; i<=days; i++) {
+                            const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                            const rec = atts[d]?.[s.id];
+                            if(rec && rec[sub] && rec[sub] !== '-') {
+                                subTotal++;
+                                if(rec[sub] === 'P' || rec[sub] === 'S/L') subP++; // Assuming SL counts
+                            }
+                        }
+                        totalP += subP;
+                        totalLec += subTotal;
+                        const pct = subTotal > 0 ? Math.round((subP/subTotal)*100) : 0;
+                        const color = pct < 75 ? 'text-red-500' : 'text-green-600';
+                        
+                        rowHTML += `<td class="px-4 py-3 text-center text-xs">
+                            <div class="font-bold ${color}">${pct}%</div>
+                            <div class="text-slate-400 text-[10px]">${subP}/${subTotal}</div>
+                        </td>`;
+                    });
+                    
+                    const overallPct = totalLec > 0 ? Math.round((totalP/totalLec)*100) : 0;
+                    rowHTML += `<td class="px-4 py-3 text-center font-bold text-blue-600 bg-slate-50">${overallPct}%</td></tr>`;
+                    
+                    tbody.innerHTML += rowHTML;
+                });
+            },
 
-                // Render Table Header
-                let h = `<tr>
-                    <th class="px-4 py-3 sticky-col-1 bg-slate-50 dark:bg-dark-card border-b dark:border-dark-border">Roll</th>
-                    <th class="px-4 py-3 sticky-col-2 bg-slate-50 dark:bg-dark-card border-b dark:border-dark-border">Name</th>
-                    <th class="px-2 py-3 text-center border-b dark:border-dark-border text-primary-600 bg-primary-50 dark:bg-primary-900/20">Overall %</th>
-                    <th class="px-2 py-3 text-center border-b dark:border-dark-border text-xs text-slate-400">Total Days</th>`;
-                subs.forEach(s => h += `<th class="px-2 py-3 text-center border-b dark:border-dark-border min-w-[80px]">${s} %</th>`);
+            loadDailyReport: async () => {
+                const d = document.getElementById('teacher-rep-date').value;
+                const cls = window.state.currentClass;
+                const tbody = document.getElementById('teacher-rep-list');
+                const thead = document.getElementById('rep-thead');
+                
+                if(!d) return;
+                tbody.innerHTML = '<tr><td colspan="100%" class="p-6 text-center text-slate-400">Loading...</td></tr>';
+                
+                const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`));
+                const record = snap.exists() ? snap.data().records : {};
+
+                // Headers
+                const glob = window.state.school.subjects || [];
+                const spec = window.state.school.class_subjects?.[cls] || [];
+                const subs = Array.from(new Set([...glob, ...spec]));
+                
+                let h = `<tr><th class="px-4 py-3 w-20 sticky-col-1 bg-slate-100 border-b border-r border-slate-200">Roll</th><th class="px-4 py-3 sticky-col-2 bg-slate-100 border-b border-r border-slate-200">Name</th>`;
+                subs.forEach(s => h+=`<th class="px-4 py-3 text-center bg-slate-100 border-b min-w-[100px]">${s}</th>`);
                 h += `</tr>`;
                 thead.innerHTML = h;
-
-                // Render Body
+                
                 tbody.innerHTML = '';
-                window.state.students.sort((a,b)=>a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true})).forEach(stu => {
-                    const data = report[stu.id];
-                    const ovrPct = data.overall.total > 0 ? Math.round(( (data.overall.p + data.overall.sl) / data.overall.total) * 100) : 0;
-                    const daysPresent = snaps.filter((snap, i) => {
-                         // Day-wise calculation: Present if at least one subject P or SL
-                         if(!snap.exists()) return false;
-                         const rec = snap.data().records[stu.id];
-                         if(!rec) return false;
-                         return Object.values(rec).some(v => v === 'P' || v === 'S/L');
-                    }).length;
-
-                    let r = `<tr class="border-b border-slate-50 dark:border-dark-border hover:bg-slate-50 dark:hover:bg-dark-border/30">
-                        <td class="px-4 py-3 font-mono font-bold text-slate-500 sticky-col-1 bg-white dark:bg-dark-card border-r dark:border-dark-border">${stu.rollNo}</td>
-                        <td class="px-4 py-3 font-medium sticky-col-2 bg-white dark:bg-dark-card border-r dark:border-dark-border">${stu.name}</td>
-                        <td class="px-2 py-3 text-center font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/20">${ovrPct}%</td>
-                        <td class="px-2 py-3 text-center text-xs text-slate-400">${daysPresent}/${dates.length}</td>`;
+                window.state.students.forEach(s => {
+                    const rec = record[s.id] || {};
+                    let r = `<tr class="border-b hover:bg-slate-50">
+                        <td class="px-4 py-3 font-mono font-bold text-slate-600 sticky-col-1 bg-white border-r border-slate-100">${s.rollNo}</td>
+                        <td class="px-4 py-3 font-medium text-slate-800 sticky-col-2 bg-white border-r border-slate-100">${s.name}</td>`;
                     
                     subs.forEach(sub => {
-                        const sData = data.subjects[sub];
-                        const sPct = sData.total > 0 ? Math.round((sData.p/sData.total)*100) : '-';
-                        const col = typeof sPct === 'number' ? (sPct < 75 ? 'text-red-500' : 'text-emerald-600') : 'text-slate-300';
-                        r += `<td class="px-2 py-3 text-center font-bold text-xs ${col}">${sPct === '-' ? '-' : sPct+'%'}</td>`;
+                        const st = rec[sub] || '-';
+                        let color = 'text-slate-300';
+                        let bg = '';
+                        if(st==='P') { color='text-green-700'; bg='bg-green-50'; }
+                        if(st==='A') { color='text-red-700'; bg='bg-red-50'; }
+                        if(st==='L') { color='text-yellow-700'; bg='bg-yellow-50'; }
+                        if(st==='S/L') { color='text-orange-700'; bg='bg-orange-50'; }
+                        r += `<td class="text-center text-xs font-bold ${color} ${bg} border-l border-slate-50">${st}</td>`;
                     });
                     r += `</tr>`;
                     tbody.innerHTML += r;
                 });
             },
 
-            downloadCSV: () => {
-                if(!window.state.reportData) return ui.toast("Generate report first");
-                const { report, subs, start, end } = window.state.reportData;
-                
-                let csv = `Roll,Name,Overall %,Days Present,${subs.map(s => s + ' %').join(',')}\n`;
-                
-                window.state.students.sort((a,b)=>a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true})).forEach(stu => {
-                    const data = report[stu.id];
-                    const ovrPct = data.overall.total > 0 ? Math.round(( (data.overall.p + data.overall.sl) / data.overall.total) * 100) : 0;
-                    
-                    // Simple logic for days present in csv - simplified since we didn't store array in state object above
-                    // For accuracy, usually we'd store 'daysPresent' in the report object too. 
-                    // We'll just output the calculated stats for now.
-                    
-                    const subPcts = subs.map(sub => {
-                        const sData = data.subjects[sub];
-                        return sData.total > 0 ? Math.round((sData.p/sData.total)*100) : '-';
-                    });
-                    
-                    csv += `"${stu.rollNo}","${stu.name}",${ovrPct}%,-,${subPcts.join(',')}\n`;
-                });
-                
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Report_${window.state.currentClass}_${start}_${end}.csv`;
-                a.click();
-            },
-            
-            filter: () => teacher.renderView(),
-
-            // --- STUDENT PROFILE STATS ---
-            calculateStudentStats: async (sid) => {
-                document.getElementById('prof-pct').innerText = '...';
-                
-                const s = window.state.students.find(st => st.id === sid);
-                if(!s) return;
-
-                const today = new Date();
-                let totalLec = 0;
-                let totalP = 0;
-                let totalAbs = 0;
-                
-                const glob = window.state.school.subjects || [];
-                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
-                const subs = Array.from(new Set([...glob, ...spec]));
-                const subStats = {};
-                subs.forEach(sub => subStats[sub] = {p:0, t:0});
-
-                const y = today.getFullYear();
-                const m = today.getMonth() + 1;
-                const days = today.getDate();
-                
-                const promises = [];
-                for(let i=1; i<=days; i++) {
-                     const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                     promises.push(getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${dateStr}`)));
-                }
-                
-                const snaps = await Promise.all(promises);
-                
-                snaps.forEach(snap => {
-                    if(snap.exists()) {
-                        const rec = snap.data().records[sid];
-                        if(rec) {
-                            subs.forEach(sub => {
-                                const st = rec[sub];
-                                if(st && st !== '-') {
-                                    subStats[sub].t++;
-                                    totalLec++;
-                                    if(st === 'P' || st === 'S/L') {
-                                        totalP++;
-                                        subStats[sub].p++;
-                                    } else if (st === 'A') {
-                                        totalAbs++;
-                                    }
-                                }
-                            });
-                        }
-                    }
-                });
-                
-                const overall = totalLec > 0 ? Math.round((totalP/totalLec)*100) : 0;
-                document.getElementById('prof-pct').innerText = overall + "%";
-                document.getElementById('prof-abs').innerText = totalAbs;
-                
-                // Render Subjects breakdown
-                const div = document.getElementById('prof-subjects');
-                div.innerHTML = '';
-                subs.forEach(sub => {
-                    const st = subStats[sub];
-                    if(st.t > 0) {
-                        const pct = Math.round((st.p/st.t)*100);
-                        const color = pct < 75 ? 'bg-red-500' : 'bg-emerald-500';
-                        div.innerHTML += `
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-slate-500 dark:text-slate-400 font-medium w-12">${sub}</span>
-                                <div class="flex-1 mx-3 h-2 bg-slate-100 dark:bg-dark-border rounded-full overflow-hidden">
-                                    <div class="h-full ${color}" style="width: ${pct}%"></div>
-                                </div>
-                                <span class="font-bold dark:text-white text-xs w-8 text-right">${pct}%</span>
-                            </div>
-                        `;
-                    }
-                });
+            openAddStudentModal: () => {
+                window.state.editingStudentIdx = null;
+                document.getElementById('modal-student-title').innerText = "Add Student";
+                document.getElementById('mod-stu-roll').value = "";
+                document.getElementById('mod-stu-name').value = "";
+                document.getElementById('btn-del-student').classList.add('hidden');
+                document.getElementById('modal-student').classList.remove('hidden');
             },
 
-            editCurrentStudent: () => {
-                ui.closeProfile();
-                const s = window.state.students[window.state.selectedStudentIdx];
+            editStudent: (idx) => {
+                window.state.editingStudentIdx = idx;
+                const s = window.state.students[idx];
+                document.getElementById('modal-student-title').innerText = "Edit Student";
                 document.getElementById('mod-stu-roll').value = s.rollNo;
                 document.getElementById('mod-stu-name').value = s.name;
-                document.getElementById('modal-student-edit').classList.remove('hidden');
+                document.getElementById('btn-del-student').classList.remove('hidden');
+                document.getElementById('modal-student').classList.remove('hidden');
             },
 
-            saveStudentDetails: async () => {
-                const s = window.state.students[window.state.selectedStudentIdx];
-                s.rollNo = document.getElementById('mod-stu-roll').value;
-                s.name = document.getElementById('mod-stu-name').value;
-                await teacher.saveStudentList();
-                document.getElementById('modal-student-edit').classList.add('hidden');
-                teacher.renderView();
+            saveStudent: async () => {
+                const r = document.getElementById('mod-stu-roll').value;
+                const n = document.getElementById('mod-stu-name').value;
+                if(!r || !n) return alert("Fill all fields");
+                if (window.state.editingStudentIdx !== null) {
+                    window.state.students[window.state.editingStudentIdx].rollNo = r;
+                    window.state.students[window.state.editingStudentIdx].name = n;
+                } else {
+                    window.state.students.push({id: Date.now().toString(), rollNo: r, name: n});
+                }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                document.getElementById('modal-student').classList.add('hidden');
+                teacher.renderList();
+                toast(window.state.editingStudentIdx !== null ? "Updated" : "Added");
             },
 
             deleteStudent: async () => {
-                if(confirm("Permanently delete student?")) {
-                    window.state.students.splice(window.state.selectedStudentIdx, 1);
-                    await teacher.saveStudentList();
-                    ui.closeProfile();
-                    teacher.renderView();
+                if(confirm("Delete student?")) {
+                    window.state.students.splice(window.state.editingStudentIdx, 1);
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                    document.getElementById('modal-student').classList.add('hidden');
+                    teacher.renderList();
                 }
             },
-            
-            // --- NOTICES ---
-            checkNotices: () => {
-                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'notices'), orderBy('date', 'desc'), limit(5));
-                 onSnapshot(q, snap => {
-                     const list = document.getElementById('teacher-notice-list');
-                     list.innerHTML = '';
-                     const badge = document.getElementById('notice-badge');
-                     
-                     if(snap.empty) {
-                         list.innerHTML = `<div class="p-8 text-center text-slate-400">No notices posted.</div>`;
-                         badge.classList.add('hidden');
-                         return;
-                     }
-                     
-                     // Simple badge logic: show if notices exist (can be improved to read status)
-                     badge.classList.remove('hidden');
 
-                     snap.forEach(doc => {
-                         const n = doc.data();
-                         list.innerHTML += `
-                             <div class="bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border border-l-4 border-l-primary-500">
-                                 <h4 class="font-bold text-lg dark:text-white">${n.title}</h4>
-                                 <p class="text-slate-600 dark:text-slate-400 mt-2 text-sm whitespace-pre-wrap">${n.body}</p>
-                                 <div class="text-xs text-slate-400 mt-4 font-mono">${new Date(n.date).toLocaleDateString()}</div>
-                             </div>
-                         `;
-                     });
-                 });
-            },
-            loadNotices: () => { /* Already listening in init */ },
-
-            // Utils
-            openAddStudentModal: () => {
-                const n = prompt("Student Name:");
-                const r = prompt("Roll Number:");
-                if(n && r) {
-                    window.state.students.push({id: Date.now().toString(), name:n, rollNo:r});
-                    teacher.saveStudentList().then(() => teacher.renderView());
-                }
-            },
-            saveStudentList: async () => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students:window.state.students}, {merge:true}),
-            
             importFile: (input) => {
-                 const f = input.files[0];
-                 if(!f) return;
-                 const r = new FileReader();
-                 r.onload = async (e) => {
-                     const lines = e.target.result.split('\n');
-                     lines.forEach(l => {
-                         const [roll, name] = l.split(',');
-                         if(roll && name) window.state.students.push({id: Date.now()+Math.random(), rollNo:roll.trim(), name:name.trim()});
-                     });
-                     await teacher.saveStudentList();
-                     teacher.renderView();
-                     ui.toast("Imported!");
-                 };
-                 r.readAsText(f);
+                const f = input.files[0];
+                if(!f) return;
+                const r = new FileReader();
+                r.onload = async (e) => {
+                    const lines = e.target.result.split('\n');
+                    let count = 0;
+                    let skipped = 0;
+                    const newStudents = [];
+
+                    lines.forEach(l => {
+                        const [roll, name] = l.split(',');
+                        if(roll && name) {
+                            const cleanRoll = roll.trim();
+                            const cleanName = name.trim();
+                            
+                            // Check for duplicates
+                            const exists = window.state.students.some(s => s.rollNo === cleanRoll);
+                            if (!exists) {
+                                newStudents.push({id: Date.now()+Math.random().toString(), rollNo: cleanRoll, name: cleanName});
+                                count++;
+                            } else {
+                                skipped++;
+                            }
+                        }
+                    });
+
+                    if(count > 0) {
+                        // Merge and Sort to ensure order is kept
+                        window.state.students = [...window.state.students, ...newStudents].sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true}));
+                        
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                        teacher.renderList();
+                        toast(`Imported ${count}. Skipped ${skipped} duplicates.`);
+                    } else if (skipped > 0) {
+                        toast(`No new students. Skipped ${skipped} duplicates.`);
+                    }
+                    input.value = '';
+                };
+                r.readAsText(f);
             }
         };
 
-        // --- INIT ---
-        // Check Theme
-        if(localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
-
-        onAuthStateChanged(auth, user => {
-            if(user) {
-                // Load School Config First
-                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), snap => {
-                    let data = {};
+        // --- BOOTSTRAP ---
+        onAuthStateChanged(auth, (user) => {
+            window.state.user = user;
+            if (user) {
+                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), (snap) => {
                     if(snap.exists()) {
-                         data = snap.data();
-                         // --- SEEDING LOGIC: If subjects empty, add default subjects ---
-                         if(!data.subjects || data.subjects.length === 0) {
-                             data.subjects = ['MATH', 'ENG', 'PHY', 'CHEM', 'BIO', 'HIST'];
-                             // Ensure we update DB so it persists
-                             setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), data, {merge:true});
-                         }
-                    } else {
-                        // First run init
-                        data = {
-                            classes: ['Class 10-A', 'Class 10-B'],
-                            teachers: [],
-                            subjects: ['MATH', 'ENG', 'PHY', 'CHEM', 'BIO', 'HIST'],
-                            class_subjects: {}
-                        };
-                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), data);
-                    }
-                    
-                    window.state.school = data;
-
-                    // Auto-route based on stored intent or email match
-                    const role = localStorage.getItem('role_attempt');
-                    if(role === 'admin') admin.init();
-                    else if(localStorage.getItem('current_class')) {
-                        window.state.currentClass = localStorage.getItem('current_class');
-                        teacher.init();
-                    } else {
-                        // Match teacher email
-                        const t = window.state.school.teachers.find(x => x.email.toLowerCase() === user.email.toLowerCase());
-                        if(t) {
-                            // Show class selection in login
-                            const s = document.getElementById('inp-teacher-class');
-                            s.innerHTML = '';
-                            (t.assignedClasses||[]).forEach(c => s.innerHTML+=`<option>${c}</option>`);
-                            document.getElementById('teacher-class-select-wrapper').classList.remove('hidden');
-                            document.getElementById('btn-teacher-login').classList.add('hidden');
-                            document.getElementById('inp-teacher-email').value = user.email;
-                            document.getElementById('inp-teacher-pass').value = '********';
-                            document.getElementById('inp-teacher-email').disabled = true;
-                            document.getElementById('inp-teacher-pass').disabled = true;
-                            
-                            // Ensure login screen is visible
-                            document.getElementById('view-login').classList.remove('hidden', 'opacity-0');
+                        window.state.school = snap.data();
+                        const role = localStorage.getItem('fcs_role_attempt');
+                        if(role === 'admin') {
+                            admin.init();
+                        } else if (localStorage.getItem('fcs_current_class')) {
+                            window.state.currentClass = localStorage.getItem('fcs_current_class');
+                            teacher.init();
                         } else {
-                            // Maybe admin login?
-                            if(role === 'admin') admin.init();
+                             const teacherData = window.state.school.teachers.find(t => t.email.toLowerCase() === user.email.toLowerCase());
+                             if(teacherData) {
+                                 const sel = document.getElementById('inp-teacher-class');
+                                 sel.innerHTML = '';
+                                 teacherData.assignedClasses.forEach(c => sel.innerHTML += `<option>${c}</option>`);
+                                 document.getElementById('teacher-class-select-wrapper').classList.remove('hidden');
+                                 document.getElementById('btn-teacher-login').classList.add('hidden');
+                                 document.getElementById('inp-teacher-email').disabled = true;
+                                 document.getElementById('inp-teacher-pass').disabled = true;
+                             }
                         }
+                    } else {
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school);
                     }
                 });
             } else {
@@ -1509,6 +1407,7 @@
                 document.getElementById('view-app').classList.add('hidden');
             }
         });
+
     </script>
 </body>
 </html>
