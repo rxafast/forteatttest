@@ -1064,7 +1064,7 @@
                         grandTotalLec += subTotal;
 
                         const subPct = subTotal > 0 ? Math.round((subP/subTotal)*100) : 0;
-                        row += `,${subPct}%,${subP} / ${subTotal}`;
+                        row += `,${subPct}%,${subP} of ${subTotal}`;
                     });
 
                     const overallPct = grandTotalLec > 0 ? Math.round((grandTotalP/grandTotalLec)*100) : 0;
