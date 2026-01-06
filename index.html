@@ -286,7 +286,8 @@
                              
                              <div id="rep-controls-monthly" class="flex justify-end gap-2">
                                  <input type="month" id="teacher-rep-month" class="border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50" onchange="teacher.loadReport()">
-                                 <button onclick="teacher.loadReport()" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition"><i class="fas fa-file-alt mr-2"></i> Generate</button>
+                                 <button onclick="teacher.loadReport()" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition"><i class="fas fa-eye mr-2"></i> View</button>
+                                 <button onclick="teacher.dlDetailedReport()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-green-700 transition"><i class="fas fa-download mr-2"></i> Download</button>
                              </div>
                     
                              <div id="rep-controls-daily" class="flex justify-end gap-2 hidden">
@@ -419,7 +420,10 @@
                                  <label class="text-xs font-bold uppercase text-slate-500">Monthly Class Report</label>
                                  <select id="rep-month-cls" class="w-full border rounded p-2 text-sm mb-2"></select>
                                  <input type="month" id="rep-month-date" class="w-full border rounded p-2 text-sm mb-2">
-                                 <button onclick="admin.dlMonthly()" class="w-full bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded text-sm font-bold hover:bg-blue-100">Download CSV</button>
+                                 <div class="flex gap-2">
+                                     <button onclick="admin.dlMonthly()" class="flex-1 bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded text-sm font-bold hover:bg-blue-100">Basic CSV</button>
+                                     <button onclick="admin.dlDetailedReport()" class="flex-1 bg-indigo-50 text-indigo-600 border border-indigo-200 py-2 rounded text-sm font-bold hover:bg-indigo-100">Detailed CSV</button>
+                                 </div>
                              </div>
                              <div class="space-y-2">
                                  <label class="text-xs font-bold uppercase text-slate-500">Daily Summary (All Classes)</label>
@@ -962,7 +966,9 @@
                 let csv = "Roll,Name,Total Lectures,Attended (P),Absents (A),Leaves (L),Short Leaves (S/L)\n";
                 
                 const cSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', cls));
-                const stus = cSnap.exists() ? cSnap.data().students : [];
+                let stus = cSnap.exists() ? cSnap.data().students : [];
+                // Sort
+                stus.sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true}));
                 
                 const atts = {};
                 await Promise.all(Array.from({length:days}, (_,i) => {
@@ -992,7 +998,84 @@
                 
                 const b = new Blob([csv], {type:'text/csv'});
                 const u = URL.createObjectURL(b);
-                const a = document.createElement('a'); a.href=u; a.download=`${cls}_${m}_Report.csv`; a.click();
+                const a = document.createElement('a'); a.href=u; a.download=`${cls}_${m}_Basic_Report.csv`; a.click();
+            },
+
+            // NEW: Detailed Report for Admin
+            dlDetailedReport: async () => {
+                const cls = document.getElementById('rep-month-cls').value;
+                const m = document.getElementById('rep-month-date').value;
+                if(!cls || !m) return alert("Select Class & Month");
+                
+                toast("Generating Detailed Report...");
+                await admin.generateDetailedCSV(cls, m);
+            },
+
+            // Shared Logic for Detailed CSV Generation
+            generateDetailedCSV: async (cls, m) => {
+                const [y, mm] = m.split('-');
+                const days = new Date(y, mm, 0).getDate();
+
+                // 1. Get Students
+                const cSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', cls));
+                let stus = cSnap.exists() ? cSnap.data().students : [];
+                stus.sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true}));
+
+                // 2. Get Subjects
+                const glob = window.state.school.subjects || [];
+                const spec = window.state.school.class_subjects?.[cls] || [];
+                const subs = Array.from(new Set([...glob, ...spec]));
+
+                // 3. Prepare Header
+                let csv = "Roll,Name";
+                subs.forEach(s => {
+                    csv += `,${s} %,${s} (P/Total)`;
+                });
+                csv += `,Overall %,Total Present,Total Lectures\n`;
+
+                // 4. Fetch Attendance Data
+                const atts = {};
+                await Promise.all(Array.from({length:days}, (_,i) => {
+                    const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                    return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`))
+                        .then(s => atts[d] = s.exists() ? s.data().records : {});
+                }));
+
+                // 5. Process Students
+                stus.forEach(s => {
+                    let row = `"${s.rollNo}","${s.name}"`;
+                    let grandTotalP = 0;
+                    let grandTotalLec = 0;
+
+                    subs.forEach(sub => {
+                        let subP = 0;
+                        let subTotal = 0;
+
+                        for(let i=1; i<=days; i++) {
+                            const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                            const rec = atts[d]?.[s.id];
+                            if(rec && rec[sub] && rec[sub] !== '-') {
+                                subTotal++;
+                                if(rec[sub] === 'P' || rec[sub] === 'S/L') subP++;
+                            }
+                        }
+                        
+                        grandTotalP += subP;
+                        grandTotalLec += subTotal;
+
+                        const subPct = subTotal > 0 ? Math.round((subP/subTotal)*100) : 0;
+                        row += `,${subPct}%,${subP}/${subTotal}`;
+                    });
+
+                    const overallPct = grandTotalLec > 0 ? Math.round((grandTotalP/grandTotalLec)*100) : 0;
+                    row += `,${overallPct}%,${grandTotalP},${grandTotalLec}\n`;
+                    csv += row;
+                });
+
+                const b = new Blob([csv], {type:'text/csv'});
+                const u = URL.createObjectURL(b);
+                const a = document.createElement('a'); a.href=u; a.download=`${cls}_${m}_Detailed_Report.csv`; a.click();
+                toast("Download Started");
             },
             
             dlDaily: async () => {
@@ -1391,6 +1474,17 @@
                     
                     tbody.innerHTML += rowHTML;
                 });
+            },
+
+            // NEW: Detailed Report for Teacher
+            dlDetailedReport: async () => {
+                const cls = window.state.currentClass;
+                const m = document.getElementById('teacher-rep-month').value;
+                if(!m) return alert("Select Month");
+                
+                toast("Generating Detailed Report...");
+                // Reusing the logic written in admin since it's identical for generation
+                await admin.generateDetailedCSV(cls, m);
             },
 
             loadDailyReport: async () => {
