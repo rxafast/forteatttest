@@ -1031,7 +1031,7 @@
                 subs.forEach(s => {
                     csv += `,${s} %,${s} (P/Total)`;
                 });
-                csv += `,Overall %,Total Present,Total Lectures\n`;
+                csv += `,Overall %,Total Present (Lec),Total Absent (Days),Total Leaves (Days),Total S-Leaves (Days),Total Lectures\n`;
 
                 // 4. Fetch Attendance Data
                 const atts = {};
@@ -1046,7 +1046,43 @@
                     let row = `"${s.rollNo}","${s.name}"`;
                     let grandTotalP = 0;
                     let grandTotalLec = 0;
+                    
+                    // Day-based counters
+                    let daysAbsent = 0;
+                    let daysLeave = 0;
+                    let daysSLeave = 0;
 
+                    // Calculate Day Stats Loop
+                    for(let i=1; i<=days; i++) {
+                        const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                        const rec = atts[d]?.[s.id];
+                        
+                        if (rec) {
+                            // Collect all valid statuses for this day
+                            const dailyStatuses = [];
+                            subs.forEach(sub => {
+                                if (rec[sub] && rec[sub] !== '-') {
+                                    dailyStatuses.push(rec[sub]);
+                                }
+                            });
+
+                            if (dailyStatuses.length > 0) {
+                                // Logic: Day is Absent only if ALL subjects are Absent
+                                const allAbsent = dailyStatuses.every(st => st === 'A');
+                                if (allAbsent) daysAbsent++;
+
+                                // Logic: Day is Leave only if ALL subjects are Leave
+                                const allLeave = dailyStatuses.every(st => st === 'L');
+                                if (allLeave) daysLeave++;
+
+                                // Logic: Day is S-Leave if AT LEAST ONE S/L exists
+                                const hasSLeave = dailyStatuses.some(st => st === 'S/L');
+                                if (hasSLeave) daysSLeave++;
+                            }
+                        }
+                    }
+
+                    // Calculate Subject Stats Loop
                     subs.forEach(sub => {
                         let subP = 0;
                         let subTotal = 0;
@@ -1068,7 +1104,7 @@
                     });
 
                     const overallPct = grandTotalLec > 0 ? Math.round((grandTotalP/grandTotalLec)*100) : 0;
-                    row += `,${overallPct}%,${grandTotalP},${grandTotalLec}\n`;
+                    row += `,${overallPct}%,${grandTotalP},${daysAbsent},${daysLeave},${daysSLeave},${grandTotalLec}\n`;
                     csv += row;
                 });
 
@@ -1437,17 +1473,47 @@
                 subs.forEach(sub => {
                     headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 min-w-[120px]">${sub}</th>`;
                 });
+                
+                headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 bg-red-50 text-red-600">Abs (Day)</th>`;
+                headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 bg-yellow-50 text-yellow-600">L (Day)</th>`;
+                headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 bg-orange-50 text-orange-600">SL (Day)</th>`;
                 headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 bg-slate-100">Total %</th></tr>`;
+                
                 thead.innerHTML = headerHTML;
                 
                 tbody.innerHTML = '';
                 
                 window.state.students.forEach(s => {
                     let totalP = 0, totalLec = 0;
+                    
+                    let daysAbsent = 0;
+                    let daysLeave = 0;
+                    let daysSLeave = 0;
+
+                    // 1. Calculate Day Stats
+                    for(let i=1; i<=days; i++) {
+                        const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                        const rec = atts[d]?.[s.id];
+                        
+                        if (rec) {
+                            const dailyStatuses = [];
+                            subs.forEach(sub => {
+                                if (rec[sub] && rec[sub] !== '-') dailyStatuses.push(rec[sub]);
+                            });
+
+                            if (dailyStatuses.length > 0) {
+                                if (dailyStatuses.every(st => st === 'A')) daysAbsent++;
+                                if (dailyStatuses.every(st => st === 'L')) daysLeave++;
+                                if (dailyStatuses.some(st => st === 'S/L')) daysSLeave++;
+                            }
+                        }
+                    }
+
                     let rowHTML = `<tr class="border-b border-slate-50 hover:bg-slate-50">
                         <td class="px-4 py-3 font-mono font-bold text-slate-600 sticky-col-1 bg-white border-r border-slate-100">${s.rollNo}</td>
                         <td class="px-4 py-3 font-medium text-slate-800 sticky-col-2 bg-white border-r border-slate-100">${s.name}</td>`;
                         
+                    // 2. Calculate Subject Stats
                     subs.forEach(sub => {
                         let subP = 0, subTotal = 0;
                         for(let i=1; i<=days; i++) {
@@ -1455,7 +1521,7 @@
                             const rec = atts[d]?.[s.id];
                             if(rec && rec[sub] && rec[sub] !== '-') {
                                 subTotal++;
-                                if(rec[sub] === 'P' || rec[sub] === 'S/L') subP++; // Assuming SL counts
+                                if(rec[sub] === 'P' || rec[sub] === 'S/L') subP++; 
                             }
                         }
                         totalP += subP;
@@ -1470,7 +1536,11 @@
                     });
                     
                     const overallPct = totalLec > 0 ? Math.round((totalP/totalLec)*100) : 0;
-                    rowHTML += `<td class="px-4 py-3 text-center font-bold text-blue-600 bg-slate-50">${overallPct}%</td></tr>`;
+                    
+                    rowHTML += `<td class="px-4 py-3 text-center font-bold text-red-600 bg-red-50 border-l border-slate-200">${daysAbsent}</td>`;
+                    rowHTML += `<td class="px-4 py-3 text-center font-bold text-yellow-600 bg-yellow-50 border-l border-slate-200">${daysLeave}</td>`;
+                    rowHTML += `<td class="px-4 py-3 text-center font-bold text-orange-600 bg-orange-50 border-l border-slate-200">${daysSLeave}</td>`;
+                    rowHTML += `<td class="px-4 py-3 text-center font-bold text-blue-600 bg-slate-50 border-l border-slate-200">${overallPct}%</td></tr>`;
                     
                     tbody.innerHTML += rowHTML;
                 });
